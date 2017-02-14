@@ -17,6 +17,7 @@
 #include "config.h"
 #include "helper.h"
 #include "uci_config.h"
+#include "storage.h"
 
 const char* device_tty;
 
