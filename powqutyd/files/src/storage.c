@@ -45,6 +45,10 @@ void set_line_length(struct file_cfg *fcfg, signed long line_length) {
 	fcfg->line_length = (ssize_t)line_length;
 }
 
+void set_timestamp_position(struct file_cfg *fcfg, int ts_pos) {
+	fcfg->ts_pos = ts_pos;
+}
+
 char * get_entry_from_line_position(char* line, int entry, char *delim) {
 	char* token;
 	for (token = strtok(line, delim); token && *token;
