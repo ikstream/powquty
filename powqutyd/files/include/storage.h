@@ -13,10 +13,18 @@
 
 #define MAX_PATH_LENGTH 512
 
+/*
+ * log file information
+ * max_logsize: maximal size of log file in bytes
+ * line_length: length of a individual line in log file
+ * ts_pos: position of the timestamp in log file line
+ * path: path to log file
+ */
 struct file_cfg {
 	off_t max_logsize;
 	ssize_t line_length;
-	char path[512];
+	int ts_pos;
+	char path[MAX_PATH_LENGTH];
 };
 
 /*
@@ -45,6 +53,13 @@ int set_log_path(struct file_cfg *fcfg, char *path);
  * 			if a line is below this value pad it.
  */
 void set_line_length(struct file_cfg *fcfg, ssize_t line_length);
+
+/*
+ * set timestamp position in a log file line
+ * @fcfg: use the position in this log file
+ * @ts_pos: entry number in log file line
+ */
+void set_timestamp_position(struct file_cfg *fcfg, int ts_pos);
 
 /*
  * get entry in csv line

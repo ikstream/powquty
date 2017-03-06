@@ -14,12 +14,10 @@
 #include "storage.h"
 
 #define KB_TO_BYTE 1024
-#define TIME_STAMP_POSITION 2
 #define TERM_CHAR 1
 #define DELIM_CHAR 1
 #define APPEND 2
 
-//TODO: move TIME_STAMP_POSITION to struct
 //TODO: provide function to set timestamp position
 //TODO: remove store_to_file code when rest is implemented
 //TODO: check documentation and comments if still correct
@@ -107,7 +105,7 @@ ssize_t get_character_count_per_line(FILE *file) {
  * @char_count: number of chars in a line
  * return 0 if file write has to be resumed, 1 if the first entry is the oldest
  */
-int is_outdated(FILE *file, ssize_t char_count) {
+int is_outdated(struct file_cfg *fcfg, FILE *file, ssize_t char_count) {
 	long first_time, last_time;
 	char *line =NULL;
 	char *last_line = malloc((sizeof(char) * char_count) + 1);
@@ -116,13 +114,13 @@ int is_outdated(FILE *file, ssize_t char_count) {
 	fseek(file, 0, SEEK_SET);
 	getline(&line, &len, file);
 	first_time = atol(get_entry_from_line_position(line,
-						       TIME_STAMP_POSITION,
+						       fcfg->ts_pos,
 						       ","));
 
 	memcpy(last_line,get_last_line(file,char_count), char_count);
 	last_line[char_count] = '\0';
 	last_time = atol(get_entry_from_line_position(last_line,
-						      TIME_STAMP_POSITION,
+						      fcfg->ts_pos,
 						      ","));
 
 	if (last_time > first_time)
@@ -176,13 +174,13 @@ long get_line_number(long offset, ssize_t char_count) {
  * @file file to read from
  * return timestam as integer
  */
-int get_line_entry(FILE *file) {
+int get_line_entry(struct file_cfg *fcfg, FILE *file) {
 	char *line = NULL;
 	size_t len = 0;
 	long val;
 
 	getline(&line, &len, file);
-	val = atol(get_entry_from_line_position(line, TIME_STAMP_POSITION,","));
+	val = atol(get_entry_from_line_position(line, fcfg->ts_pos, ","));
 	return val;
 }
 
@@ -194,30 +192,32 @@ int get_line_entry(FILE *file) {
  * @l_bound lower boundary for latest timestamp search
  * @char_count: length of line to calculate offset
  */
-void set_position(FILE *file, long u_bound, long l_bound, ssize_t char_count) {
+void set_position(struct file_cfg *fcfg, FILE *file, long u_bound, long l_bound,
+		  ssize_t char_count) {
+
 	long u_offset, m_offset, l_offset;
 	long u_line_number, m_line_number, l_line_number;
 	int u_val, m_val, l_val;
 
 	fseek(file, u_bound, SEEK_SET);
 	u_offset = ftell(file);
-	u_val = get_line_entry(file);
+	u_val = get_line_entry(fcfg, file);
 	u_line_number = get_line_number(u_offset, char_count);
 
 	fseek(file, l_bound, SEEK_SET);
 	l_offset = ftell(file);
-	l_val = get_line_entry(file);
+	l_val = get_line_entry(fcfg, file);
 	l_line_number = get_line_number(l_offset, char_count);
 
 	m_line_number = ((l_line_number + u_line_number) / 2);
 	m_offset = ((m_line_number * char_count) - char_count);
 	fseek(file, m_offset, SEEK_SET);
-	m_val = get_line_entry(file);
+	m_val = get_line_entry(fcfg, file);
 
 	if ((m_val > l_val) && (m_val > u_val))
-		set_position(file, m_offset, l_offset, char_count);
+		set_position(fcfg, file, m_offset, l_offset, char_count);
 	if ((m_val < l_val) && (m_val < u_val))
-		set_position(file, u_offset, m_offset, char_count);
+		set_position(fcfg, file, u_offset, m_offset, char_count);
 	if ((m_val == u_val) || (m_val == l_val))
 		fseek(file, m_offset + char_count, SEEK_SET);
 }
@@ -259,7 +259,7 @@ int check_and_print(FILE *file, struct file_cfg *fcfg, char * line) {
  * @file: look at this file
  * return: 0 if a position is found, on error return >=1
  */
-int seek_position(FILE *file) {
+int seek_position(struct file_cfg *fcfg, FILE *file) {
 	size_t len = 0;
 	off_t eof, cur_offset = 0;
 	char *line = NULL;
@@ -279,7 +279,7 @@ int seek_position(FILE *file) {
 			return 1;
 		cur_offset += (off_t)line_length;
 		timestamp = atol(get_entry_from_line_position(line,
-			    TIME_STAMP_POSITION, ","));
+			    fcfg->ts_pos, ","));
 
 		len = 0;
 		line = NULL;
@@ -287,7 +287,7 @@ int seek_position(FILE *file) {
 		if (line_length < 0)
 			return 1;
 		cur_timestamp = atol(get_entry_from_line_position(line,
-			    TIME_STAMP_POSITION, ","));
+			    fcfg->ts_pos, ","));
 
 		if (cur_timestamp < timestamp) {
 			fseek(file, (long)line_length, SEEK_CUR);
@@ -320,7 +320,7 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 			no_fix_line_length = 1;
 
 		if (no_fix_line_length) {
-			ret = seek_position(file);
+			ret = seek_position(fcfg, file);
 			if (!ret) {
 				fprintf(file, "%s", line);
 				return ret;
@@ -334,13 +334,13 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 		if (file_is_unchecked) {
 			file_is_unchecked = 0;
 
-			if (is_outdated(file,char_count)) {
+			if (is_outdated(fcfg, file,char_count)) {
 				fseek(file, 0, SEEK_SET);
 				cur_offset = 0;
 			} else {
 				fseek(file, 0, SEEK_SET);
 				upper_bound = ftell(file);
-				set_position(file,upper_bound,lower_bound,
+				set_position(fcfg, file,upper_bound,lower_bound,
 					     char_count);
 				cur_offset = ftell(file);
 				if (cur_offset == lower_bound)
@@ -363,7 +363,6 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 	fclose(file);
 
 	return 0;
-
 }
 
 /*
