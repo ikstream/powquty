@@ -15,25 +15,48 @@
 
 #define KB_TO_BYTE 1024
 #define TIME_STAMP_POSITION 2
+#define TERM_CHAR 1
+#define DELIM_CHAR 1
+#define APPEND 2
+
+//TODO: move TIME_STAMP_POSITION to struct
+//TODO: provide function to set timestamp position
+//TODO: remove store_to_file code when rest is implemented
+//TODO: check documentation and comments if still correct
 
 int file_is_unchecked = 1;
 long cur_offset;
 
-/*
- * get entry in csv line
- * @line: comma separated line, to parse
- * @entry: position in line
- * return: token if found, else NULL
- */
-char * get_entry_from_line_position(char* line, int entry) {
+void set_max_logsize(struct file_cfg *fcfg, long max_logsize) {
+	fcfg->max_logsize = (off_t)(max_logsize * KB_TO_BYTE);
+}
+
+int set_log_path(struct file_cfg *fcfg, char *path) {
+	size_t len = strlen(path) + TERM_CHAR;
+
+	if (len > MAX_PATH_LENGTH)
+		return EXIT_FAILURE;
+
+	if(strncpy(fcfg->path, path, len) == NULL);
+		return EXIT_FAILURE;
+
+	return EXIT_SUCCESS;
+}
+
+void set_line_length(struct file_cfg *fcfg, signed long line_length) {
+	fcfg->line_length = (ssize_t)line_length;
+}
+
+char * get_entry_from_line_position(char* line, int entry, char *delim) {
 	char* token;
-	for (token = strtok(line, ","); token && *token;
+	for (token = strtok(line, delim); token && *token;
 	     token = strtok(NULL, ",\n")) {
 		if (!--entry)
 			return token;
 	}
 	return NULL;
 }
+
 
 /*
  * get the last line of a file
@@ -93,12 +116,14 @@ int is_outdated(FILE *file, ssize_t char_count) {
 	fseek(file, 0, SEEK_SET);
 	getline(&line, &len, file);
 	first_time = atol(get_entry_from_line_position(line,
-						       TIME_STAMP_POSITION));
+						       TIME_STAMP_POSITION,
+						       ","));
 
 	memcpy(last_line,get_last_line(file,char_count), char_count);
 	last_line[char_count] = '\0';
 	last_time = atol(get_entry_from_line_position(last_line,
-						      TIME_STAMP_POSITION));
+						      TIME_STAMP_POSITION,
+						      ","));
 
 	if (last_time > first_time)
 		return 1;
@@ -157,7 +182,7 @@ int get_line_entry(FILE *file) {
 	long val;
 
 	getline(&line, &len, file);
-	val = atol(get_entry_from_line_position(line, TIME_STAMP_POSITION));
+	val = atol(get_entry_from_line_position(line, TIME_STAMP_POSITION,","));
 	return val;
 }
 
@@ -198,8 +223,153 @@ void set_position(FILE *file, long u_bound, long l_bound, ssize_t char_count) {
 }
 
 /*
+ * check if length of line is greater than line_length
+ * if it is longer, truncate and append ,TR
+ * if it is shorter pad and append ,PA
+ * else append ,OK
+ * and print to file
+ * @file: write to this file
+ * @line: write this line to file
+ */
+int check_and_print(FILE *file, struct file_cfg *fcfg, char * line) {
+	size_t char_count = strlen(line) * sizeof(char);
+	size_t final_len = fcfg->line_length + DELIM_CHAR + APPEND + TERM_CHAR;
+	int i, chars_written;
+	char final_line[final_len];
+
+	strncpy(final_line, line, fcfg->line_length);
+	if (char_count > fcfg->line_length) {
+		strncat(final_line, ",TR", final_len);
+	} else if (char_count < fcfg->line_length) {
+		for (i = char_count; i < fcfg->line_length; i++)
+			if (final_line[i] == '\0')
+				final_line[i] = ' ';
+		strncat(final_line, ",PA", final_len);
+	} else {
+		strncat(final_line, ",OK", final_len);
+	}
+
+	return fprintf(file, "%s", final_line);
+}
+
+//TODO: check return values of functions called
+/*
+ * Seek position to resume log write
+ * This will be used if no fix line length is given
+ * @file: look at this file
+ * return: 0 if a position is found, on error return >=1
+ */
+int seek_position(FILE *file) {
+	size_t len = 0;
+	off_t eof, cur_offset = 0;
+	char *line = NULL;
+	ssize_t line_length;
+	long timestamp, cur_timestamp;
+
+	/* iterate over file and compare timestamps
+	 * if never timestamp is found set file position to line start
+	 */
+	fseek(file, 0, SEEK_END);
+	eof = ftell(file);
+
+	while (cur_offset < eof) {
+		fseek(file, cur_offset, SEEK_SET);
+		line_length = getline(&line, &len, file);
+		if (line_length < 0)
+			return 1;
+		cur_offset += (off_t)line_length;
+		timestamp = atol(get_entry_from_line_position(line,
+			    TIME_STAMP_POSITION, ","));
+
+		len = 0;
+		line = NULL;
+		line_length = getline(&line, &len, file);
+		if (line_length < 0)
+			return 1;
+		cur_timestamp = atol(get_entry_from_line_position(line,
+			    TIME_STAMP_POSITION, ","));
+
+		if (cur_timestamp < timestamp) {
+			fseek(file, (long)line_length, SEEK_CUR);
+			return 0;
+		}
+	}
+	return 1;
+}
+
+//TODO: check return values
+int write_line_to_file(struct file_cfg *fcfg, char *line) {
+	FILE *file;
+	ssize_t char_count;
+	long lower_bound, upper_bound;
+	int no_fix_line_length = 0;
+	int ret;
+
+	if (!has_max_size(fcfg->path, fcfg->max_logsize)) {
+		file = fopen(fcfg->path, "a");
+		if (file == NULL)
+			exit(EXIT_FAILURE);
+	} else {
+		file = fopen(fcfg->path, "r+");
+
+		if (fcfg->line_length > 0)
+			char_count = fcfg->line_length;
+		else if (fcfg->line_length == 0)
+			char_count = get_character_count_per_line(file);
+		else
+			no_fix_line_length = 1;
+
+		if (no_fix_line_length) {
+			ret = seek_position(file);
+			if (!ret) {
+				fprintf(file, "%s", line);
+				return ret;
+			} else {
+				return ret;
+			}
+		}
+
+		fseek(file, -char_count, SEEK_END);
+		lower_bound = ftell(file);
+		if (file_is_unchecked) {
+			file_is_unchecked = 0;
+
+			if (is_outdated(file,char_count)) {
+				fseek(file, 0, SEEK_SET);
+				cur_offset = 0;
+			} else {
+				fseek(file, 0, SEEK_SET);
+				upper_bound = ftell(file);
+				set_position(file,upper_bound,lower_bound,
+					     char_count);
+				cur_offset = ftell(file);
+				if (cur_offset == lower_bound)
+					file_is_unchecked = 1;
+			}
+		} else {
+			cur_offset += (long)get_character_count_per_line(file);
+			fseek(file, cur_offset, SEEK_SET);
+			if (cur_offset == lower_bound)
+				file_is_unchecked = 1;
+		}
+	}
+
+	/* fcfg == 0 should not be possible at this position */
+	if (fcfg->line_length >= 0)
+		check_and_print(file, fcfg, line);
+	else
+		fprintf(file, "%s", line);
+
+	fclose(file);
+
+	return 0;
+
+}
+
+/*
  * For a correct file write all line must have the same number of characters.
  */
+/*
 void store_to_file(PQResult pq_result, struct powquty_conf *config) {
 	FILE* pf;
 	ssize_t char_count;
@@ -255,3 +425,5 @@ void store_to_file(PQResult pq_result, struct powquty_conf *config) {
 			pq_result.Harmonics[6] );
 	fclose(pf);
 }
+*/
+

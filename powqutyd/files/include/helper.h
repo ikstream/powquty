@@ -9,6 +9,7 @@
 #define HELPER_H_
 
 #include "PQ_App.h"
+#include "uci_config.h"
 
 long long get_curr_time_in_milliseconds();
 
@@ -23,5 +24,7 @@ float get_float_val(unsigned char* buf);
 unsigned short get_unsigned_short_val(unsigned char* buf);
 
 void print_PQ_Error(PQ_ERROR err);
+
+void store_to_file(PQResult pq_result, struct powquty_conf *config);
 
 #endif /* HELPER_H_ */

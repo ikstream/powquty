@@ -9,7 +9,9 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <string.h>
-#include "config.h"
+#include <stdlib.h>
+
+#define MAX_LINE_LENGTH 130
 
 void print_received_buffer(unsigned char* buf, int len) {
 	if(len>0) {
@@ -79,5 +81,27 @@ void print_PQ_Error(PQ_ERROR err) {
 			printf("Unknown Error: %d\n",err);
 			break;
 	}
+}
+
+void store_to_file(PQResult pq_result, struct powquty_conf *config) {
+	char *line = malloc(sizeof(char) * MAX_LINE_LENGTH);
+	long long ts = get_curr_time_in_milliseconds();
+	long ts_sec = get_curr_time_in_seconds();
+	sprintf(line,
+		"%s,%ld,%lld,3,%010.6f,%09.6f,%09.6f,%09.6f,%09.6f,%09.6f,"
+		"%09.6f,%09.6f,%09.6f\n",
+		"DEV_UUID",
+		ts_sec,
+		ts,
+		pq_result.PowerVoltageEff_5060T,
+		pq_result.PowerFrequency5060T,
+		pq_result.Harmonics[0],
+		pq_result.Harmonics[1],
+		pq_result.Harmonics[2],
+		pq_result.Harmonics[3],
+		pq_result.Harmonics[4],
+		pq_result.Harmonics[5],
+		pq_result.Harmonics[6] );
+
 }
 
