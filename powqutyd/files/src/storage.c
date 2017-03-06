@@ -153,27 +153,24 @@ int is_outdated(struct file_cfg *fcfg, FILE *file, ssize_t char_count) {
 
 /*
  * check if a file is above a given limit
- * @file: file to check
- * @max_size: maximal size of file in kB
+ * @fcfg: log file configuration struct
  * return: returns 1 if file is above the limit, else 0
  */
-int has_max_size(char *powquty_path, off_t max_size) {
+int has_max_size(struct file_cfg *fcfg) {
 	struct stat st;
 	off_t filesize;
 
-	max_size *= KB_TO_BYTE;
-
-	if (access(powquty_path, F_OK ))
+	if (access(fcfg->path, F_OK ))
 		return 0;
 
-	if (stat(powquty_path, &st) == 0) {
+	if (stat(fcfg->path, &st) == 0) {
 		filesize = st.st_size;
 	} else {
 		printf("Could not get filesize\n");
-		exit(2);
+		exit(EXIT_FAILURE);
 	}
 
-	if (filesize > max_size)
+	if (filesize > fcfg->max_logsize)
 		return 1;
 
 	return 0;
@@ -384,7 +381,7 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 	int no_fix_line_length = 0;
 	int ret;
 
-	if (!has_max_size(fcfg->path, fcfg->max_logsize)) {
+	if (!has_max_size(fcfg)) {
 		file = fopen(fcfg->path, "a");
 		if (file == NULL) {
 			printf("Could not open file in %s\n", __func__);
