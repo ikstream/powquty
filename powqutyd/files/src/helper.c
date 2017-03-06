@@ -10,6 +10,7 @@
 #include <sys/time.h>
 #include <string.h>
 #include <stdlib.h>
+#include "storage.h"
 
 #define MAX_LINE_LENGTH 130
 
@@ -84,10 +85,17 @@ void print_PQ_Error(PQ_ERROR err) {
 }
 
 void store_to_file(PQResult pq_result, struct powquty_conf *config) {
+	struct file_cfg *fcfg = malloc(sizeof(struct file_cfg));
 	char *line = malloc(sizeof(char) * MAX_LINE_LENGTH);
 
 	long long ts = get_curr_time_in_milliseconds();
 	long ts_sec = get_curr_time_in_seconds();
+
+	/* init log file parameters */
+	set_max_logsize(fcfg, config->max_log_size_kb);
+	set_log_path(fcfg, config->powquty_path);
+	set_line_length(fcfg, MAX_LINE_LENGTH);
+
 	sprintf(line,
 		"%s,%ld,%lld,3,%010.6f,%09.6f,%09.6f,%09.6f,%09.6f,%09.6f,"
 		"%09.6f,%09.6f,%09.6f\n",
@@ -103,5 +111,6 @@ void store_to_file(PQResult pq_result, struct powquty_conf *config) {
 		pq_result.Harmonics[4],
 		pq_result.Harmonics[5],
 		pq_result.Harmonics[6] );
+	write_line_to_file(fcfg, line);
 }
 
