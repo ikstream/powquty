@@ -74,6 +74,7 @@ char * get_entry_from_line_position(char* line, int entry, char *delim);
  * write log line to correct position in log file
  * @file_cfg: log file config struct
  * @line: write this line to log file
+ * return: 0 on success, else 1
  */
 int write_line_to_file(struct file_cfg *fcfg, char *line);
 
