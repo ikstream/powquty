@@ -13,6 +13,7 @@
 #include "storage.h"
 
 #define MAX_LINE_LENGTH 130
+#define TS_POS 2
 
 void print_received_buffer(unsigned char* buf, int len) {
 	if(len>0) {
@@ -95,6 +96,7 @@ void store_to_file(PQResult pq_result, struct powquty_conf *config) {
 	set_max_logsize(fcfg, config->max_log_size_kb);
 	set_log_path(fcfg, config->powquty_path);
 	set_line_length(fcfg, MAX_LINE_LENGTH);
+	set_timestamp_position(fcfg, TS_POS);
 
 	sprintf(line,
 		"%s,%ld,%lld,3,%010.6f,%09.6f,%09.6f,%09.6f,%09.6f,%09.6f,"
