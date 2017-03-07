@@ -27,4 +27,6 @@ void print_PQ_Error(PQ_ERROR err);
 
 void store_to_file(PQResult pq_result, struct powquty_conf *config);
 
+void init_log_file(struct powquty_conf *config);
+
 #endif /* HELPER_H_ */

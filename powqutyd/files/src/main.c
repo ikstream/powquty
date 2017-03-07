@@ -17,6 +17,7 @@
 #include "retrieval.h"
 #include "config.h"
 #include "uci_config.h"
+#include "helper.h"
 
 static volatile int stop_main = 0;
 
@@ -66,7 +67,7 @@ int main (int argc, char *argv[]) {
 	struct powquty_conf conf;
 	uci_config_powquty(&conf);
 	//printf("UCI CONFIG FTW!!!");
-
+	init_log_file(&conf);
 	// PQ_ERROR err = PQ_NO_ERROR;
 
 	printf("Starting powqutyd ...\n");
