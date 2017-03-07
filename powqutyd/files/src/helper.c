@@ -85,6 +85,7 @@ void print_PQ_Error(PQ_ERROR err) {
 
 void store_to_file(PQResult pq_result, struct powquty_conf *config) {
 	char *line = malloc(sizeof(char) * MAX_LINE_LENGTH);
+
 	long long ts = get_curr_time_in_milliseconds();
 	long ts_sec = get_curr_time_in_seconds();
 	sprintf(line,
@@ -102,6 +103,5 @@ void store_to_file(PQResult pq_result, struct powquty_conf *config) {
 		pq_result.Harmonics[4],
 		pq_result.Harmonics[5],
 		pq_result.Harmonics[6] );
-
 }
 
