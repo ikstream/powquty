@@ -39,8 +39,8 @@ int set_log_path(struct file_cfg *fcfg, char *path) {
 	return EXIT_SUCCESS;
 }
 
-void set_line_length(struct file_cfg *fcfg, signed long line_length) {
-	fcfg->line_length = (ssize_t)line_length;
+void set_line_length(struct file_cfg *fcfg, ssize_t line_length) {
+	fcfg->line_length = line_length;
 }
 
 void set_timestamp_position(struct file_cfg *fcfg, int ts_pos) {
