@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include "storage.h"
 
-#define MAX_LINE_LENGTH 140
+#define MAX_LINE_LENGTH 123
 #define TS_POS 2
 
 struct file_cfg *fcfg;
@@ -103,11 +103,11 @@ void store_to_file(PQResult pq_result, struct powquty_conf *config) {
 	long ts_sec = get_curr_time_in_seconds();
 
 	sprintf(line,
-		"%s,%lld,%ld,3,%010.6f,%09.6f,%09.6f,%09.6f,%09.6f,%09.6f,"
+		"%s,%ld,%lld,3,%010.6f,%09.6f,%09.6f,%09.6f,%09.6f,%09.6f,"
 		"%09.6f,%09.6f,%09.6f",
 		"DEV_UUID",
-		ts,
 		ts_sec,
+		ts,
 		pq_result.PowerVoltageEff_5060T,
 		pq_result.PowerFrequency5060T,
 		pq_result.Harmonics[0],
