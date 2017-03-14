@@ -419,14 +419,17 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 			ret = seek_position(fcfg, file);
 			if (!ret) {
 				fprintf(file, "%s", line);
+				fclose(file);
 				return ret;
 			} else {
+				fclose(file);
 				return ret;
 			}
 		}
 
 		if (fseek(file, -char_count, SEEK_END)) {
 			printf("fseek failed in %s\n", __func__);
+			fclose(file);
 			return EXIT_FAILURE;
 		}
 
@@ -446,6 +449,7 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 				if (cur_offset == -1) {
 					printf("ftell returned -1 in %s\n",
 					       __func__);
+					fclose(file);
 					return EXIT_FAILURE;
 				}
 				if (cur_offset == lower_bound)
@@ -455,6 +459,7 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 			cur_offset += (long)get_character_count_per_line(file);
 			if (fseek(file, cur_offset, SEEK_SET)) {
 				printf("fseek failed in %s\n", __func__);
+				fclose(file);
 				return EXIT_FAILURE;
 			}
 			if (cur_offset == lower_bound)
@@ -465,6 +470,7 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 	/* fcfg == 0 should not be possible at this position */
 	if (fcfg->line_length >= 0) {
 		if (check_and_print(file, fcfg, line))
+			fclose(file);
 			return EXIT_FAILURE;
 	} else {
 		fprintf(file, "%s", line);
