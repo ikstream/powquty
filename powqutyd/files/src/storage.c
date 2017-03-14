@@ -287,26 +287,33 @@ int check_and_print(FILE *file, struct file_cfg *fcfg, char * line) {
 	int i;
 	char final_line[final_len];
 
+	printf("char_count: %ld, final_len: %ld\n", (long)char_count, (long)final_len);
 	if (strncpy(final_line, line, fcfg->line_length) == NULL) {
 		printf("strncpy failed in %s\n", __func__);
 		return 0;
 	}
 
+	if (final_line[final_len - 1] == '\n')
+		final_line[final_len - 1] = '\0';
+
 	if (char_count > fcfg->line_length) {
-		if (strncat(final_line, ",TR", final_len) == NULL) {
+		if (strncat(final_line, ",TR\n", final_len) == NULL) {
 			printf("strncat failed(TR) in %s\n", __func__);
 			return 0;
 		}
 	} else if (char_count < fcfg->line_length) {
-		for (i = char_count; i < fcfg->line_length; i++)
-			if (final_line[i] == '\0')
+		for (i = char_count - 1; i <= fcfg->line_length; i++) {
+			if ((final_line[i] == '\0') || (final_line[i] == '\n')) {
+				printf("pos in final_line: %d\n", i);
 				final_line[i] = ' ';
-		if (strncat(final_line, ",PA", final_len) == NULL) {
+			}
+		}
+		if (strncat(final_line, ",PA\n", final_len) == NULL) {
 			printf("strncat failed(PA) in %s\n", __func__);
 			return 0;
 		}
 	} else {
-		if (strncat(final_line, ",OK", final_len) == NULL) {
+		if (strncat(final_line, ",OK\n", final_len) == NULL) {
 			printf("strncat failed(OK) in %s\n", __func__);
 			return 0;
 		}
