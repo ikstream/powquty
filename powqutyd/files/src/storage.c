@@ -23,6 +23,7 @@
 int file_is_unchecked = 1;
 long cur_offset;
 
+//TODO: check if > 0
 void set_max_logsize(struct file_cfg *fcfg, long max_logsize) {
 	fcfg->max_logsize = (off_t)(max_logsize * KB_TO_BYTE);
 }
@@ -39,6 +40,7 @@ int set_log_path(struct file_cfg *fcfg, char *path) {
 	return EXIT_SUCCESS;
 }
 
+//TODO: check if > 0
 void set_line_length(struct file_cfg *fcfg, ssize_t line_length) {
 	fcfg->line_length = line_length;
 }
@@ -68,7 +70,7 @@ char * get_last_line(FILE *file, ssize_t char_count) {
 	ssize_t read;
 	size_t len = 0;
 
-	if (fseek(file, -char_count,SEEK_END)) {
+	if (fseek(file, - char_count, SEEK_END)) {
 		printf("fseek failed in %s\n", __func__);
 		exit(EXIT_FAILURE);
 	}
@@ -78,6 +80,7 @@ char * get_last_line(FILE *file, ssize_t char_count) {
 		printf("Could not get last line\n");
 		exit(EXIT_FAILURE);
 	}
+
 	return line;
 }
 
@@ -124,6 +127,11 @@ int is_outdated(struct file_cfg *fcfg, FILE *file, ssize_t char_count) {
 	char *line =NULL;
 	char *last_line = malloc((sizeof(char) * char_count) + 1);
 	size_t len = 0;
+
+	if (last_line == NULL) {
+		printf("could not allocate memory in %s\n", __func__);
+		exit(EXIT_FAILURE);
+	}
 
 	if (fseek(file, 0, SEEK_SET)) {
 		printf("fseek failed in %s\n", __func__);
@@ -283,30 +291,26 @@ void set_position(struct file_cfg *fcfg, FILE *file, long u_bound, long l_bound,
  */
 int check_and_print(FILE *file, struct file_cfg *fcfg, char * line) {
 	size_t char_count = strlen(line) * sizeof(char);
-	size_t final_len = fcfg->line_length + TERM_CHAR +
-				DELIM_CHAR + APPEND + TERM_CHAR;
+	size_t final_len = fcfg->line_length + (sizeof(char) * (TERM_CHAR +
+				DELIM_CHAR + APPEND + TERM_CHAR));
 	int i;
 	char final_line[final_len];
 
-	printf("char_count: %ld, final_len: %ld\n", (long)char_count, (long)final_len);
 	if (strncpy(final_line, line, fcfg->line_length) == NULL) {
 		printf("strncpy failed in %s\n", __func__);
 		return 0;
 	}
 
-	printf("check if last char is line break\n");
 	if (final_line[final_len - 1] == '\n')
 		final_line[final_len - 1] = '\0';
 
 	if (char_count > fcfg->line_length) {
-		printf("char_count > line_length\n");
 		final_line[fcfg->line_length] = '\0';
 		if (strncat(final_line, ",TR\n", final_len) == NULL) {
 			printf("strncat failed(TR) in %s\n", __func__);
 			return 0;
 		}
 	} else if (char_count < fcfg->line_length) {
-		printf("char_count < line_length\n");
 		for (i = char_count - 1; i < fcfg->line_length; i++) {
 			if ((final_line[i] == '\0') || (final_line[i] == '\n')){
 				final_line[i] = ' ';
@@ -318,7 +322,6 @@ int check_and_print(FILE *file, struct file_cfg *fcfg, char * line) {
 			return 0;
 		}
 	} else {
-		printf("char_count == line_length\n");
 		final_line[fcfg->line_length] = '\0';
 		if (strncat(final_line, ",OK\n", final_len) == NULL) {
 			printf("strncat failed(OK) in %s\n", __func__);
@@ -409,7 +412,9 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 			return EXIT_FAILURE;
 		}
 		if (fcfg->line_length > 0)
-			char_count = fcfg->line_length;
+			char_count = fcfg->line_length + (sizeof(char) *
+					(DELIM_CHAR + APPEND +
+					 TERM_CHAR));
 		else if (fcfg->line_length == 0)
 			char_count = get_character_count_per_line(file);
 		else
