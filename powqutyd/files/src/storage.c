@@ -283,7 +283,8 @@ void set_position(struct file_cfg *fcfg, FILE *file, long u_bound, long l_bound,
  */
 int check_and_print(FILE *file, struct file_cfg *fcfg, char * line) {
 	size_t char_count = strlen(line) * sizeof(char);
-	size_t final_len = fcfg->line_length + DELIM_CHAR + APPEND + TERM_CHAR;
+	size_t final_len = fcfg->line_length + TERM_CHAR +
+				DELIM_CHAR + APPEND + TERM_CHAR;
 	int i;
 	char final_line[final_len];
 
@@ -293,26 +294,32 @@ int check_and_print(FILE *file, struct file_cfg *fcfg, char * line) {
 		return 0;
 	}
 
+	printf("check if last char is line break\n");
 	if (final_line[final_len - 1] == '\n')
 		final_line[final_len - 1] = '\0';
 
 	if (char_count > fcfg->line_length) {
+		printf("char_count > line_length\n");
+		final_line[fcfg->line_length] = '\0';
 		if (strncat(final_line, ",TR\n", final_len) == NULL) {
 			printf("strncat failed(TR) in %s\n", __func__);
 			return 0;
 		}
 	} else if (char_count < fcfg->line_length) {
-		for (i = char_count - 1; i <= fcfg->line_length; i++) {
-			if ((final_line[i] == '\0') || (final_line[i] == '\n')) {
-				printf("pos in final_line: %d\n", i);
+		printf("char_count < line_length\n");
+		for (i = char_count - 1; i < fcfg->line_length; i++) {
+			if ((final_line[i] == '\0') || (final_line[i] == '\n')){
 				final_line[i] = ' ';
 			}
+			final_line[fcfg->line_length] = '\0';
 		}
 		if (strncat(final_line, ",PA\n", final_len) == NULL) {
 			printf("strncat failed(PA) in %s\n", __func__);
 			return 0;
 		}
 	} else {
+		printf("char_count == line_length\n");
+		final_line[fcfg->line_length] = '\0';
 		if (strncat(final_line, ",OK\n", final_len) == NULL) {
 			printf("strncat failed(OK) in %s\n", __func__);
 			return 0;
@@ -375,12 +382,13 @@ int seek_position(struct file_cfg *fcfg, FILE *file) {
 				printf("fseek failed in %s\n", __func__);
 				return EXIT_FAILURE;
 			}
-			return 0;
+			return EXIT_SUCCESS;
 		}
 	}
 	return EXIT_FAILURE;
 }
 
+//TODO: check for line_length in fcfg->line_length == 0
 int write_line_to_file(struct file_cfg *fcfg, char *line) {
 	FILE *file;
 	ssize_t char_count;
@@ -464,67 +472,6 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 
 	fclose(file);
 
-	return 0;
+	return EXIT_SUCCESS;
 }
-
-/*
- * For a correct file write all line must have the same number of characters.
- */
-/*
-void store_to_file(PQResult pq_result, struct powquty_conf *config) {
-	FILE* pf;
-	ssize_t char_count;
-	long lower_bound, upper_bound;
-
-	if (!has_max_size(config->powquty_path, (off_t)config->max_log_size_kb)) {
-		pf = fopen(config->powquty_path,"a");
-		if (pf == NULL)
-			exit(EXIT_FAILURE);
-	} else {
-		pf = fopen(config->powquty_path, "r+");
-		char_count = get_character_count_per_line(pf);
-		fseek(pf, -char_count, SEEK_END);
-		lower_bound = ftell(pf);
-		if (file_is_unchecked) {
-			file_is_unchecked = 0;
-
-			if (is_outdated(pf,char_count)) {
-				fseek(pf, 0, SEEK_SET);
-				cur_offset = 0;
-			} else {
-				fseek(pf, 0, SEEK_SET);
-				upper_bound = ftell(pf);
-				set_position(pf,upper_bound,lower_bound,
-					     char_count);
-				cur_offset = ftell(pf);
-				if (cur_offset == lower_bound)
-					file_is_unchecked = 1;
-			}
-		} else {
-			cur_offset += (long)get_character_count_per_line(pf);
-			fseek(pf, cur_offset, SEEK_SET);
-			if (cur_offset == lower_bound)
-				file_is_unchecked = 1;
-		}
-	}
-	long long ts = get_curr_time_in_milliseconds();
-	long ts_sec = get_curr_time_in_seconds();
-	fprintf(pf,
-			"%s,%ld,%lld,3,%010.6f,%09.6f,%09.6f,%09.6f,%09.6f,%09.6f,"
-			"%09.6f,%09.6f,%09.6f\n",
-			"DEV_UUID",
-			ts_sec,
-			ts,
-			pq_result.PowerVoltageEff_5060T,
-			pq_result.PowerFrequency5060T,
-			pq_result.Harmonics[0],
-			pq_result.Harmonics[1],
-			pq_result.Harmonics[2],
-			pq_result.Harmonics[3],
-			pq_result.Harmonics[4],
-			pq_result.Harmonics[5],
-			pq_result.Harmonics[6] );
-	fclose(pf);
-}
-*/
 
