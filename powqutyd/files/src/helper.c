@@ -104,7 +104,7 @@ void store_to_file(PQResult pq_result, struct powquty_conf *config) {
 
 	sprintf(line,
 		"%s,%ld,%lld,3,%010.6f,%09.6f,%09.6f,%09.6f,%09.6f,%09.6f,"
-		"%09.6f,%09.6f,%09.6f\n",
+		"%09.6f,%09.6f,%09.6f",
 		"DEV_UUID",
 		ts_sec,
 		ts,
