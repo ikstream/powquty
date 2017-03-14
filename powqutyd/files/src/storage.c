@@ -18,14 +18,15 @@
 #define DELIM_CHAR 1
 #define APPEND 2
 
-//TODO: remove store_to_file code when rest is implemented
-
 int file_is_unchecked = 1;
 long cur_offset;
 
-//TODO: check if > 0
 void set_max_logsize(struct file_cfg *fcfg, long max_logsize) {
 	fcfg->max_logsize = (off_t)(max_logsize * KB_TO_BYTE);
+	if (fcfg->max_logsize <= 0) {
+		printf("max log size has to be > 0 but is %ld\n", max_logsize);
+		exit(EXIT_FAILURE);
+	}
 }
 
 int set_log_path(struct file_cfg *fcfg, char *path) {
@@ -40,13 +41,16 @@ int set_log_path(struct file_cfg *fcfg, char *path) {
 	return EXIT_SUCCESS;
 }
 
-//TODO: check if > 0
 void set_line_length(struct file_cfg *fcfg, ssize_t line_length) {
 	fcfg->line_length = line_length;
 }
 
 void set_timestamp_position(struct file_cfg *fcfg, int ts_pos) {
 	fcfg->ts_pos = ts_pos;
+	if (ts_pos < 1) {
+		printf("position of timestamp has to be >=1 but is %d\n",ts_pos);
+		exit(EXIT_FAILURE);
+	}
 }
 
 char * get_entry_from_line_position(char* line, int entry, char *delim) {

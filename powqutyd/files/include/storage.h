@@ -30,7 +30,7 @@ struct file_cfg {
 /*
  * set max size for each log file
  * @file_cfg: set max size for this log file
- * @max_logsize: max size in kB
+ * @max_logsize: max size in kB has to be >0
  */
 void set_max_logsize(struct file_cfg *fcfg, long max_logsize);
 
@@ -57,7 +57,7 @@ void set_line_length(struct file_cfg *fcfg, ssize_t line_length);
 /*
  * set timestamp position in a log file line
  * @fcfg: use the position in this log file
- * @ts_pos: entry number in log file line
+ * @ts_pos: entry number in log file line, has to be >= 1
  */
 void set_timestamp_position(struct file_cfg *fcfg, int ts_pos);
 
