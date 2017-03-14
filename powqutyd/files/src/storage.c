@@ -157,6 +157,7 @@ int is_outdated(struct file_cfg *fcfg, FILE *file, ssize_t char_count) {
 						      fcfg->ts_pos,
 						      ","));
 
+	free(last_line);
 	if (last_time > first_time)
 		return 1;
 
