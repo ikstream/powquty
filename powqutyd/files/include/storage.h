@@ -48,7 +48,7 @@ int set_log_path(struct file_cfg *fcfg, char *path);
  * @line_length:-1 -> 	no fix line length
  * 		0  -> 	not sure how long. check line length and set it,
  * 			if possible
- * 		>0 ->	set fix line length to this value
+ * 		>0 ->	set fix line length to this value without null byte
  * 			if a line is above this value truncate it
  * 			if a line is below this value pad it.
  */
