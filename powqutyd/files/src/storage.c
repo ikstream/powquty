@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 #include "storage.h"
 
 #define KB_TO_BYTE 1024
@@ -86,6 +87,57 @@ char * get_last_line(FILE *file, ssize_t char_count) {
 	}
 
 	return line;
+}
+
+/*
+ * check if all lines in a file are of the same length and set line_length
+ * if there are two different line length set line_length to -1 else
+ * set it accordingly
+ * @fcfg: file config struct
+ * @file: file to check
+ * return -1 on different line length, else number of chars without
+ * 	teminating char
+ */
+ssize_t check_lines_for_length(struct file_cfg *fcfg, FILE *file) {
+	char *line = NULL;
+	size_t len = 0;
+	off_t eof, cur_pos;
+	ssize_t char_count, cur_char_count;
+
+	if (fseek(file, 0, SEEK_END)) {
+		printf("fseek failed in %s with %s\n", __func__, strerror(errno));
+		exit(errno);
+	}
+	eof = ftell(file);
+
+	if (fseek(file, 0, SEEK_SET)) {
+		printf("fseek failed in %s with %s\n", __func__, strerror(errno));
+		exit(errno);
+	}
+
+	char_count = getline(&line, &len, file);
+	if (char_count == -1) {
+		free(line);
+		printf("getline failed in %s with %s\n", __func__,
+				strerror(errno));
+		exit(errno);
+	}
+
+	cur_pos = ftell(file);
+	while(cur_pos != eof) {
+		free(line);
+		len = 0;
+		cur_char_count = getline(&line, &len, file);
+		if (cur_char_count != char_count) {
+			fcfg->line_length = -1;
+			free(line);
+			printf("found two different line length\n");
+			return -1;
+		}
+		cur_pos = ftell(file);
+	}
+	fcfg->line_length = char_count;
+	return char_count;
 }
 
 /*
@@ -421,7 +473,9 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 					(DELIM_CHAR + APPEND +
 					 TERM_CHAR));
 		else if (fcfg->line_length == 0)
-			char_count = get_character_count_per_line(file);
+			char_count = check_lines_for_length(fcfg, file);
+			if (char_count < 0)
+				no_fix_line_length = 1;
 		else
 			no_fix_line_length = 1;
 
