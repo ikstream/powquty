@@ -76,14 +76,15 @@ char * get_last_line(FILE *file, ssize_t char_count) {
 	size_t len = 0;
 
 	if (fseek(file, - char_count, SEEK_END)) {
-		printf("fseek failed in %s\n", __func__);
-		exit(EXIT_FAILURE);
+		printf("fseek failed in %s: %s\n", __func__, strerror(errno));
+		exit(errno);
 	}
 
 	read = getline(&line, &len, file);
 	if (read == -1) {
-		printf("Could not get last line\n");
-		exit(EXIT_FAILURE);
+		printf("getline failed in %s: %s\n", __func__, strerror(errno));
+		free(line);
+		exit(errno);
 	}
 
 	return line;
@@ -111,15 +112,14 @@ ssize_t check_lines_for_length(struct file_cfg *fcfg, FILE *file) {
 	eof = ftell(file);
 
 	if (fseek(file, 0, SEEK_SET)) {
-		printf("fseek failed in %s with %s\n", __func__, strerror(errno));
+		printf("fseek failed in %s: %s\n", __func__, strerror(errno));
 		exit(errno);
 	}
 
 	char_count = getline(&line, &len, file);
 	if (char_count == -1) {
 		free(line);
-		printf("getline failed in %s with %s\n", __func__,
-				strerror(errno));
+		printf("getline failed in %s: %s\n", __func__, strerror(errno));
 		exit(errno);
 	}
 
@@ -130,8 +130,8 @@ ssize_t check_lines_for_length(struct file_cfg *fcfg, FILE *file) {
 		cur_char_count = getline(&line, &len, file);
 		if (cur_char_count != char_count) {
 			fcfg->line_length = -1;
+			printf("Found two different line length\n");
 			free(line);
-			printf("found two different line length\n");
 			return -1;
 		}
 		cur_pos = ftell(file);
@@ -152,19 +152,19 @@ ssize_t get_character_count_per_line(FILE *file) {
 	ssize_t char_count;
 
 	if (fseek(file, 0, SEEK_SET)) {
-		printf("fseek failed in %s\n", __func__);
+		printf("fseek failed in %s: %s\n", __func__, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	char_count = getline(&line, &len, file);
 	if (char_count == -1) {
-		printf("Error in line read: Could not get number of characters"
-			" in first line\n");
+		printf("getline failed in %s: %s\n", __func__, strerror(errno));
+		free(line);
 		exit(EXIT_FAILURE);
 	}
 
 	if (fseek(file, 0, SEEK_SET)) {
-		printf("fseek failed in %s\n", __func__);
+		printf("fseek failed in %s: %s\n", __func__, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -185,17 +185,19 @@ int is_outdated(struct file_cfg *fcfg, FILE *file, ssize_t char_count) {
 	size_t len = 0;
 
 	if (last_line == NULL) {
-		printf("could not allocate memory in %s\n", __func__);
+		printf("Couldn't allocate memory in %s: %s\n", __func__,
+							      strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	if (fseek(file, 0, SEEK_SET)) {
-		printf("fseek failed in %s\n", __func__);
+		printf("fseek failed in %s: %s\n", __func__, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	if (getline(&line, &len, file) == -1) {
-		printf("getline failed in %s\n", __func__);
+		printf("getline failed in %s: %s\n", __func__, strerror(errno));
+		free(line);
 		exit(EXIT_FAILURE);
 	}
 
@@ -231,8 +233,8 @@ int has_max_size(struct file_cfg *fcfg) {
 	if (stat(fcfg->path, &st) == 0) {
 		filesize = st.st_size;
 	} else {
-		printf("Could not get filesize\n");
-		exit(EXIT_FAILURE);
+		printf("stat failed in %s: %s\n", __func__ ,strerror(errno));
+		exit(errno);
 	}
 
 	if (filesize > fcfg->max_logsize)
@@ -265,8 +267,8 @@ int get_line_entry(struct file_cfg *fcfg, FILE *file) {
 	long val;
 
 	if (getline(&line, &len, file) == -1) {
-		printf("getline failed in %s\n", __func__);
-		exit(EXIT_FAILURE);
+		printf("getline failed in %s: %s\n", __func__, strerror(errno));
+		exit(errno);
 	}
 
 	val = atol(get_entry_from_line_position(line, fcfg->ts_pos, ","));
@@ -290,28 +292,28 @@ void set_position(struct file_cfg *fcfg, FILE *file, long u_bound, long l_bound,
 	int u_val, m_val, l_val;
 
 	if (fseek(file, u_bound, SEEK_SET)) {
-		printf("fseek failed in %s\n", __func__);
-		exit(EXIT_FAILURE);
+		printf("fseek failed in %s: %s\n", __func__, strerror(errno));
+		exit(errno);
 	}
 
 	u_offset = ftell(file);
 	if (u_offset == -1) {
-		printf("ftell returned -1 in %s\n", __func__);
-		exit(EXIT_FAILURE);
+		printf("ftell failed in %s: %s\n", __func__, strerror(errno));
+		exit(errno);
 	}
 
 	u_val = get_line_entry(fcfg, file);
 	u_line_number = get_line_number(u_offset, char_count);
 
 	if (fseek(file, l_bound, SEEK_SET)) {
-		printf("fseek failed in %s\n", __func__);
-		exit(EXIT_FAILURE);
+		printf("fseek failed in %s: %s\n", __func__, strerror(errno));
+		exit(errno);
 	}
 
 	l_offset = ftell(file);
 	if (l_offset == -1) {
-		printf("ftell returned -1 in %s\n", __func__);
-		exit(EXIT_FAILURE);
+		printf("ftell failed in %s: %s\n", __func__, strerror(errno));
+		exit(errno);
 	}
 
 	l_val = get_line_entry(fcfg, file);
@@ -321,8 +323,8 @@ void set_position(struct file_cfg *fcfg, FILE *file, long u_bound, long l_bound,
 	m_offset = ((m_line_number * char_count) - char_count);
 
 	if (fseek(file, m_offset, SEEK_SET)) {
-		printf("fseek failed in %s\n", __func__);
-		exit(EXIT_FAILURE);
+		printf("fseek failed in %s: %s\n", __func__, strerror(errno));
+		exit(errno);
 	}
 
 	m_val = get_line_entry(fcfg, file);
@@ -406,41 +408,51 @@ int seek_position(struct file_cfg *fcfg, FILE *file) {
 	/* iterate over file and compare timestamps
 	 * if never timestamp is found set file position to line start */
 	if (fseek(file, 0, SEEK_END)) {
-		printf("fseek failed in %s\n", __func__);
-		return EXIT_FAILURE;
+		printf("fseek failed in %s: %s\n", __func__, strerror(errno));
+		return errno;
 	}
 
 	eof = ftell(file);
 	if (eof == -1) {
-		printf("ftell returned -1 in %s\n", __func__);
-		return EXIT_FAILURE;
+		printf("ftell failed in %s: %s\n", __func__, strerror(errno));
+		return errno;
 	}
 
 	while (cur_offset < eof) {
 		if (fseek(file, cur_offset, SEEK_SET)) {
-			printf("fseek failed in %s\n", __func__);
-			return EXIT_FAILURE;
+			printf("fseek failed in %s: %s\n", __func__,
+							  strerror(errno));
+			return errno;
 		}
 
 		line_length = getline(&line, &len, file);
-		if (line_length < 0)
-			return EXIT_FAILURE;
+		if (line_length < 0) {
+			printf("getline failed in %s: %s\n", __func__,
+							    strerror(errno));
+			free(line);
+			return errno;
+		}
 		cur_offset += (off_t)line_length;
 		timestamp = atol(get_entry_from_line_position(line,
 			    fcfg->ts_pos, ","));
 
 		len = 0;
-		line = NULL;
+		free(line);
 		line_length = getline(&line, &len, file);
-		if (line_length < 0)
-			return EXIT_FAILURE;
+		if (line_length < 0) {
+			printf("getline failed in %s: %s\n", __func__,
+							    strerror(errno));
+			free(line);
+			return errno;
+		}
 		cur_timestamp = atol(get_entry_from_line_position(line,
 			    fcfg->ts_pos, ","));
 
 		if (cur_timestamp < timestamp) {
 			if (fseek(file, (long)line_length, SEEK_CUR)) {
-				printf("fseek failed in %s\n", __func__);
-				return EXIT_FAILURE;
+				printf("fseek failed in %s: %s\n", __func__,
+							strerror(errno));
+				return errno;
 			}
 			return EXIT_SUCCESS;
 		}
@@ -459,14 +471,16 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 	if (!has_max_size(fcfg)) {
 		file = fopen(fcfg->path, "a");
 		if (file == NULL) {
-			printf("Could not open file in %s\n", __func__);
-			return EXIT_FAILURE;
+			printf("fopen failed in %s: %s\n", __func__,
+							  strerror(errno));
+			return errno;
 		}
 	} else {
 		file = fopen(fcfg->path, "r+");
 		if (file == NULL) {
-			printf("Could not open file in %s\n", __func__);
-			return EXIT_FAILURE;
+			printf("fopen failed in %s: %s\n", __func__,
+							  strerror(errno));
+			return errno;
 		}
 		if (fcfg->line_length > 0)
 			char_count = fcfg->line_length + (sizeof(char) *
@@ -492,9 +506,10 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 		}
 
 		if (fseek(file, -char_count, SEEK_END)) {
-			printf("fseek failed in %s\n", __func__);
+			printf("fseek failed in %s: %s\n", __func__,
+							  strerror(errno));
 			fclose(file);
-			return EXIT_FAILURE;
+			return errno;
 		}
 
 		lower_bound = ftell(file);
@@ -502,19 +517,46 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 			file_is_unchecked = 0;
 
 			if (is_outdated(fcfg, file,char_count)) {
-				fseek(file, 0, SEEK_SET);
+				if (fseek(file, 0, SEEK_SET)) {
+					printf("fseek failed in %s: %s\n",
+						__func__, strerror(errno));
+					return errno;
+				}
 				cur_offset = 0;
 			} else {
-				fseek(file, 0, SEEK_SET);
+				if (fseek(file, 0, SEEK_SET)) {
+					printf("fseek failed in %s: %s\n",
+						__func__, strerror(errno));
+					if (fclose(file)) {
+						printf("fclose failed: %s: %s\n",
+							__func__, strerror(errno));
+						exit(errno);
+					}
+					return errno;
+				}
 				upper_bound = ftell(file);
+				if (upper_bound == -1) {
+					printf("ftell failed in %s: %s\n",
+						__func__, strerror(errno));
+					if (fclose(file)) {
+						printf("fclose failed: %s :%s\n",
+							__func__, strerror(errno));
+						exit(errno);
+					}
+					return errno;
+				}
 				set_position(fcfg, file,upper_bound,lower_bound,
 					     char_count);
 				cur_offset = ftell(file);
 				if (cur_offset == -1) {
-					printf("ftell returned -1 in %s\n",
-					       __func__);
-					fclose(file);
-					return EXIT_FAILURE;
+					printf("ftell failed in %s: %s\n",
+						__func__, strerror(errno));
+					if (fclose(file)) {
+						printf("fclose failed: %s:%s\n",
+							__func__,strerror(errno));
+						exit(errno);
+					}
+					return errno;
 				}
 				if (cur_offset == lower_bound)
 					file_is_unchecked = 1;
@@ -522,9 +564,14 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 		} else {
 			cur_offset += (long)get_character_count_per_line(file);
 			if (fseek(file, cur_offset, SEEK_SET)) {
-				printf("fseek failed in %s\n", __func__);
-				fclose(file);
-				return EXIT_FAILURE;
+				printf("fseek failed in %s: %s\n", __func__,
+							strerror(errno));
+				if (fclose(file)) {
+					printf("fclose failed: %s: %s\n",
+						__func__, strerror(errno));
+					exit(errno);
+				}
+				return errno;
 			}
 			if (cur_offset == lower_bound)
 				file_is_unchecked = 1;
@@ -534,13 +581,20 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 	/* fcfg == 0 should not be possible at this position */
 	if (fcfg->line_length >= 0) {
 		if (check_and_print(file, fcfg, line))
-			fclose(file);
+			if (fclose(file)) {
+				printf("fclose failed: %s: %s\n", __func__,
+						strerror(errno));
+				exit(errno);
+			}
 			return EXIT_FAILURE;
 	} else {
 		fprintf(file, "%s", line);
 	}
 
-	fclose(file);
+	if (fclose(file)) {
+		printf("fclose failed: %s: %s\n", __func__, strerror(errno));
+		exit(errno);
+	}
 
 	return EXIT_SUCCESS;
 }
