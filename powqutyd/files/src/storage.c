@@ -123,6 +123,7 @@ ssize_t check_lines_for_length(struct file_cfg *fcfg, FILE *file) {
 		exit(errno);
 	}
 
+	/* check every line in log file */
 	cur_pos = ftell(file);
 	while(cur_pos != eof) {
 		free(line);
@@ -329,6 +330,7 @@ void set_position(struct file_cfg *fcfg, FILE *file, long u_bound, long l_bound,
 
 	m_val = get_line_entry(fcfg, file);
 
+	/* set boundaries for recursive function call */
 	if ((m_val > l_val) && (m_val > u_val))
 		set_position(fcfg, file, m_offset, l_offset, char_count);
 	if ((m_val < l_val) && (m_val < u_val))
@@ -350,7 +352,7 @@ void set_position(struct file_cfg *fcfg, FILE *file, long u_bound, long l_bound,
  */
 int check_and_print(FILE *file, struct file_cfg *fcfg, char * line) {
 	size_t char_count = strlen(line) * sizeof(char);
-	size_t final_len = fcfg->line_length + (sizeof(char) * (TERM_CHAR +
+	size_t final_len = fcfg->line_length + (sizeof(char) * (
 				DELIM_CHAR + APPEND + TERM_CHAR));
 	int i;
 	char final_line[final_len];
@@ -363,6 +365,7 @@ int check_and_print(FILE *file, struct file_cfg *fcfg, char * line) {
 	if (final_line[final_len - 1] == '\n')
 		final_line[final_len - 1] = '\0';
 
+	/* Append status to line */
 	if (char_count > fcfg->line_length) {
 		final_line[fcfg->line_length] = '\0';
 		if (strncat(final_line, ",TR\n", final_len) == NULL) {
@@ -405,8 +408,6 @@ int seek_position(struct file_cfg *fcfg, FILE *file) {
 	ssize_t line_length;
 	long timestamp, cur_timestamp;
 
-	/* iterate over file and compare timestamps
-	 * if never timestamp is found set file position to line start */
 	if (fseek(file, 0, SEEK_END)) {
 		printf("fseek failed in %s: %s\n", __func__, strerror(errno));
 		return errno;
@@ -418,6 +419,8 @@ int seek_position(struct file_cfg *fcfg, FILE *file) {
 		return errno;
 	}
 
+	/* iterate over file and compare timestamps
+	 * if never timestamp is found set file position to line start */
 	while (cur_offset < eof) {
 		if (fseek(file, cur_offset, SEEK_SET)) {
 			printf("fseek failed in %s: %s\n", __func__,
@@ -460,7 +463,6 @@ int seek_position(struct file_cfg *fcfg, FILE *file) {
 	return EXIT_FAILURE;
 }
 
-//TODO: check for line_length in fcfg->line_length == 0
 int write_line_to_file(struct file_cfg *fcfg, char *line) {
 	FILE *file;
 	ssize_t char_count;
@@ -468,6 +470,7 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 	int no_fix_line_length = 0;
 	int ret;
 
+	/* check for max size */
 	if (!has_max_size(fcfg)) {
 		file = fopen(fcfg->path, "a");
 		if (file == NULL) {
@@ -482,6 +485,8 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 							  strerror(errno));
 			return errno;
 		}
+
+		/* check line length */
 		if (fcfg->line_length > 0) {
 			char_count = fcfg->line_length + (sizeof(char) *
 					(DELIM_CHAR + APPEND +
@@ -514,10 +519,12 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 			return errno;
 		}
 
+		/* first time file is checked for write position */
 		lower_bound = ftell(file);
 		if (file_is_unchecked) {
 			file_is_unchecked = 0;
 
+			/* check if first time stamp is oldest */
 			if (is_outdated(fcfg, file,char_count)) {
 				if (fseek(file, 0, SEEK_SET)) {
 					printf("fseek failed in %s: %s\n",
@@ -580,7 +587,7 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 		}
 	}
 
-	/* fcfg == 0 should not be possible at this position */
+	/* process line if we know its length, else just print it to file */
 	if (fcfg->line_length > 0) {
 		if (check_and_print(file, fcfg, line))
 			if (fclose(file)) {
