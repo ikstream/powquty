@@ -441,6 +441,7 @@ int seek_position(struct file_cfg *fcfg, FILE *file) {
 
 		len = 0;
 		free(line);
+		line = NULL;
 		line_length = getline(&line, &len, file);
 		if (line_length < 0) {
 			printf("getline failed in %s: %s\n", __func__,
