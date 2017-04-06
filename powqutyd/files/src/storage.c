@@ -580,7 +580,7 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 	}
 
 	/* fcfg == 0 should not be possible at this position */
-	if (fcfg->line_length >= 0) {
+	if (fcfg->line_length > 0) {
 		if (check_and_print(file, fcfg, line))
 			if (fclose(file)) {
 				printf("fclose failed: %s: %s\n", __func__,
