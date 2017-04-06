@@ -482,16 +482,17 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 							  strerror(errno));
 			return errno;
 		}
-		if (fcfg->line_length > 0)
+		if (fcfg->line_length > 0) {
 			char_count = fcfg->line_length + (sizeof(char) *
 					(DELIM_CHAR + APPEND +
 					 TERM_CHAR));
-		else if (fcfg->line_length == 0)
+		} else if (fcfg->line_length == 0) {
 			char_count = check_lines_for_length(fcfg, file);
 			if (char_count < 0)
 				no_fix_line_length = 1;
-		else
+		} else {
 			no_fix_line_length = 1;
+		}
 
 		if (no_fix_line_length) {
 			ret = seek_position(fcfg, file);
