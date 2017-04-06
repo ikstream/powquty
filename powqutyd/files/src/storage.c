@@ -589,7 +589,7 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 			}
 			return EXIT_FAILURE;
 	} else {
-		fprintf(file, "%s", line);
+		fprintf(file, "%s\n", line);
 	}
 
 	if (fclose(file)) {
