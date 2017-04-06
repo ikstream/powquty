@@ -488,6 +488,7 @@ int write_line_to_file(struct file_cfg *fcfg, char *line) {
 					 TERM_CHAR));
 		} else if (fcfg->line_length == 0) {
 			char_count = check_lines_for_length(fcfg, file);
+			fcfg->line_length = char_count;
 			if (char_count < 0)
 				no_fix_line_length = 1;
 		} else {
