@@ -35,6 +35,12 @@ else
   LD_LIBS+=-lmosquitto
 endif
 
+ifeq ($(NO_SLACK),y)
+else
+  CFLAGS+=-lcurl
+  LD_LIBS+=-lcurl
+endif
+
 LD_LIBS+=-lpthread
 #LD_LIBS+=-lusb
 #LD_LIBS+=-lusb-1.0
@@ -48,6 +54,7 @@ OBJS= src/emulator.o \
 	src/config.o \
 	src/uci_config.o \
 	src/mqtt.o \
+	src/libwebslack.o \
 	src/retrieval.o \
 	src/calculation.o \
 	src/raw_dump.o \
@@ -55,6 +62,8 @@ OBJS= src/emulator.o \
 
 MQTT_OBJS= src/mqtt.o \
 	test/mqtt_test.o 
+
+SLACK_OBJS= src/libwebslack.o
 
 USB_TEST_OBJS= test/usb_test.o
 
