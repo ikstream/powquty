@@ -1,8 +1,8 @@
 
-m = Map("powquty")
+m = Map("powquty", "General Configuration")
+m:chain("powquty_event_log")
 
 s = m:section(NamedSection, "powquty", "powquty", "Configuration")
-
 
 device_tty = s:option(Value, "device_tty", "Device tty", "The path to the tty device created by cdc-acm driver")
 device_tty.datatype = "string"
@@ -32,5 +32,24 @@ max_log_size_kb = s:option(Value, "max_log_size_kb", "max_log_size_kb", "Maximum
 max_log_size_kb.datatype = "string"
 max_log_size_kb.default = "4096"
 
-return m
+m1 = Map("powquty_event_log", "Powquty Event Log")
+sl = m1:section(NamedSection, "powquty_event_log", "powquty_event_log", "Event Log Configuration")
+
+powquty_slack = sl:option(Flag, "enable_slack", "enable_slack", "If activated, powquty will send notifications to a slack channel")
+powquty_slack.rmempty = false
+powquty_slack.default = true
+
+slack_webhook = sl:option(Value, "slack_webhook", "slack_webhook", "Incoming webhook for slack")
+slack_webhook.datatype = "string"
+slack_webhook.default = ""
+
+slack_user = sl:option(Value, "slack_user", "slack_user", "The user name to use for messages")
+slack_user.datatype = "string"
+slack_user.default = "PowQuty_novio"
+
+slack_channel = sl:option(Value, "slack_channel", "slack_channel", "Post to this channel")
+slack_channel.datatype = "string"
+slack_channel.default = "#general"
+
+return m,m1
 
