@@ -38,7 +38,7 @@ sl = m1:section(NamedSection, "powquty_event_log", "powquty_event_log", "Event L
 
 powquty_email = sl:option(Flag, "powquty_email", "powquty_email", "If activated, powquty will send notifications via email")
 powquty_email.rmempty = false
-powquty_email.default = true
+powquty_email.default = false
 
 powquty_adress = sl:option(Value, "powquty_adress", "powquty_adress", "Email adress to use")
 powquty_adress.datatype = "String"
@@ -48,9 +48,21 @@ powquty_subject = sl:option(Value, "powquty_subject", "powquty_subject", "Subjec
 powquty_subject.datatype = "String"
 powquty_subject.default = "[EN50160-Event]"
 
+mqtt_eventflag = sl:option(Flag, "mqtt_eventflag", "mqtt_eventflag", "If activated, powquty will send mqtt notification on EN50160 Event")
+mqtt_eventflag.rmempty = false
+mqtt_eventflag.default = true
+
+mqtt_eventhost = sl:option(Value, "mqtt_eventhost", "mqtt_eventhost", "IP-address or URL to the MQTT broker who receives the publish messages of powqutd")
+mqtt_eventhost.datatype = "string"
+mqtt_eventhost.default = "localhost"
+
+mqtt_eventtopic = sl:option(Value, "mqtt_eventtopic", "mqtt_eventtopic", "The topic powquty publishes EN50160 events to")
+mqtt_eventtopic.datatype = "String"
+mqtt_eventtopic.default = "device/en50160-event"
+
 powquty_slack = sl:option(Flag, "powquty_slack", "powquty_slack", "If activated, powquty will send notifications to a slack channel")
 powquty_slack.rmempty = false
-powquty_slack.default = true
+powquty_slack.default = false
 
 slack_webhook = sl:option(Value, "slack_webhook", "slack_webhook", "Incoming webhook for slack")
 slack_webhook.datatype = "string"
