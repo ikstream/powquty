@@ -1,7 +1,6 @@
 
 m = Map("powquty", "General Configuration")
 m:chain("powquty_event_log")
-
 s = m:section(NamedSection, "powquty", "powquty", "Configuration")
 
 device_tty = s:option(Value, "device_tty", "Device tty", "The path to the tty device created by cdc-acm driver")
@@ -32,10 +31,24 @@ max_log_size_kb = s:option(Value, "max_log_size_kb", "max_log_size_kb", "Maximum
 max_log_size_kb.datatype = "string"
 max_log_size_kb.default = "4096"
 
+
+
 m1 = Map("powquty_event_log", "Powquty Event Log")
 sl = m1:section(NamedSection, "powquty_event_log", "powquty_event_log", "Event Log Configuration")
 
-powquty_slack = sl:option(Flag, "enable_slack", "enable_slack", "If activated, powquty will send notifications to a slack channel")
+powquty_email = sl:option(Flag, "powquty_email", "powquty_email", "If activated, powquty will send notifications via email")
+powquty_email.rmempty = false
+powquty_email.default = true
+
+powquty_adress = sl:option(Value, "powquty_adress", "powquty_adress", "Email adress to use")
+powquty_adress.datatype = "String"
+powquty_adress.default = ""
+
+powquty_subject = sl:option(Value, "powquty_subject", "powquty_subject", "Subject prefix")
+powquty_subject.datatype = "String"
+powquty_subject.default = "[EN50160-Event]"
+
+powquty_slack = sl:option(Flag, "powquty_slack", "powquty_slack", "If activated, powquty will send notifications to a slack channel")
 powquty_slack.rmempty = false
 powquty_slack.default = true
 
