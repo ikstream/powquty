@@ -30,6 +30,11 @@ config POWQUTYD_NO_SLACK
 	default n
 	prompt "Compile without Slack integration"
 
+config POWQUTYD_NO_EMAIL
+	bool
+	default n
+	prompt "Compile without Email integration"
+
 endmenu
 endef
 
@@ -74,6 +79,18 @@ ifeq ($(CONFIG_POWQUTYD_NO_SLACK),y)
 else
   NO_SLACK := n
   export NO_SLACK
+endif
+
+ifeq ($(CONFIG_POWQUTYD_NO_EMAIL),y)
+
+  NO_EMAIL := y
+  export NO_EMAIL
+
+  JKL := $(filter-out +libcurl,$(DEPENDS))
+  DEPENDS := $(JKL)
+else
+  NO_EMAIL := n
+  export NO_EMAIL
 endif
 
 define Build/Prepare
