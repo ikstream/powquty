@@ -8,7 +8,8 @@
 #ifndef UCI_CONFIG_H_
 #define UCI_CONFIG_H_
 
-#define MAX_STR_LEN	31
+#define MAX_LENGTH	32
+#define WEBHOOK_LENGTH 	512
 
 struct powquty_conf {
 
@@ -19,6 +20,25 @@ struct powquty_conf {
 	char powquty_path[32];
 	int powqutyd_print;
 	long max_log_size_kb;
+
+#ifndef NO_MQTT
+	int event_flag;
+	char eventhost[MAX_LENGTH];
+	char eventtopic[MAX_LENGTH];
+#endif
+
+#ifndef NO_SLACK
+	int powquty_slack;
+	char slack_webhook[WEBHOOK_LENGTH];
+	char slack_user[MAX_LENGTH];
+	char slack_channel[MAX_LENGTH];
+#endif
+
+#ifndef NO_MAIL
+	int powquty_email;
+	char powquty_adress[MAX_LENGTH];
+	char powquty_subject[MAX_LENGTH];
+#endif
 
 /*	option device_tty '/dev/ttyACM0'
 		option mqtt_host 'localhost'

@@ -10,6 +10,9 @@
 #include <uci.h>
 #include "uci_config.h"
 
+#define ON 1
+#define OFF 0
+
 /** analogous to uci_lookup_option_string from uci.h, returns -1 when not found */
 static int uci_lookup_option_int(struct uci_context *uci, struct uci_section *s,
 		const char *name) {
@@ -30,13 +33,32 @@ int uci_config_powquty(struct powquty_conf* conf) {
 	struct uci_element* e;
 	const char* str;
 
-	char default_device_tty[32] = "/dev/ttyACM0";
-	char default_powquty_path[32] = "/tmp/powquty.log";
-	char default_mqtt_host[32] = "localhost";
-	char default_mqtt_topic[32] = "devices/update";
-	char default_dev_uuid[32] = "BERTUB001";
-	int default_powqutyd_print = 1;
+	/* general powquty config */
+	char default_device_tty[MAX_LENGTH] = "/dev/ttyACM0";
+	char default_powquty_path[MAX_LENGTH] = "/tmp/powquty.log";
+	char default_dev_uuid[MAX_LENGTH] = "BERTUB001";
+	int default_powqutyd_print = ON;
 	long default_max_log_size_kb = 4096;
+
+	/* regular MQTT handling */
+	char default_mqtt_host[MAX_LENGTH] = "localhost";
+	char default_mqtt_topic[MAX_LENGTH] = "devices/update";
+
+	/* MQTT event handling */
+	int default_event_flag = ON;
+	char default_mqtt_eventhost[MAX_LENGTH] = "localhost";
+	char default_mqtt_eventtopic[MAX_LENGTH] = "device/en50160-event";
+
+	/* Slack Config */
+	int default_powquty_slack = OFF;
+	char default_slack_webhook[WEBHOOK_LENGTH] = "";
+	char default_slack_user[MAX_LENGTH] = "PowQuty_novio";
+	char default_slack_channel[MAX_LENGTH] = "#general";
+
+	/* email configuration */
+	int default_powquty_email = OFF;
+	char default_powquty_adress[MAX_LENGTH] = "";
+	char default_powquty_subject[MAX_LENGTH] = "[EN50160-Event]";
 
 	uci = uci_alloc_context();
 	if (uci == NULL)
@@ -63,7 +85,7 @@ int uci_config_powquty(struct powquty_conf* conf) {
 			str = uci_lookup_option_string(uci, s, "dev_uuid");
 			if (str == NULL)
 				continue;
-			if (strlen(str) >= MAX_STR_LEN) {
+			if (strlen(str) >= MAX_LENGTH) {
 				continue;
 			}
 			strcpy(conf->dev_uuid, str);
@@ -73,7 +95,7 @@ int uci_config_powquty(struct powquty_conf* conf) {
 			str = uci_lookup_option_string(uci, s, "mqtt_host");
 			if (str == NULL)
 				continue;
-			if (strlen(str) >= MAX_STR_LEN) {
+			if (strlen(str) >= MAX_LENGTH) {
 				continue;
 			}
 			strcpy(conf->mqtt_host, str);
@@ -83,7 +105,7 @@ int uci_config_powquty(struct powquty_conf* conf) {
 			str = uci_lookup_option_string(uci, s, "mqtt_topic");
 			if (str == NULL)
 				continue;
-			if (strlen(str) >= MAX_STR_LEN) {
+			if (strlen(str) >= MAX_LENGTH) {
 				continue;
 			}
 			strcpy(conf->mqtt_topic, str);
@@ -92,7 +114,7 @@ int uci_config_powquty(struct powquty_conf* conf) {
 			str = uci_lookup_option_string(uci, s, "device_tty");
 			if (str == NULL)
 				continue;
-			if (strlen(str) >= MAX_STR_LEN) {
+			if (strlen(str) >= MAX_LENGTH) {
 				continue;
 			}
 			strcpy(conf->device_tty, str);
@@ -101,7 +123,7 @@ int uci_config_powquty(struct powquty_conf* conf) {
 			str = uci_lookup_option_string(uci, s, "powquty_path");
 			if (str == NULL)
 				continue;
-			if (strlen(str) >= MAX_STR_LEN) {
+			if (strlen(str) >= MAX_LENGTH) {
 				continue;
 			}
 			strcpy(conf->powquty_path, str);
