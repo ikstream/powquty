@@ -44,21 +44,27 @@ int uci_config_powquty(struct powquty_conf* conf) {
 	char default_mqtt_host[MAX_LENGTH] = "localhost";
 	char default_mqtt_topic[MAX_LENGTH] = "devices/update";
 
+#ifndef NO_MQTT
 	/* MQTT event handling */
 	int default_event_flag = ON;
 	char default_mqtt_eventhost[MAX_LENGTH] = "localhost";
 	char default_mqtt_eventtopic[MAX_LENGTH] = "device/en50160-event";
+#endif /* NO_MQTT */
 
+#ifndef NO_SLACK
 	/* Slack Config */
 	int default_powquty_slack = OFF;
 	char default_slack_webhook[WEBHOOK_LENGTH] = "";
 	char default_slack_user[MAX_LENGTH] = "PowQuty_novio";
 	char default_slack_channel[MAX_LENGTH] = "#general";
+#endif /* NO_SLACK */
 
+#ifndef NO_MAIL
 	/* email configuration */
 	int default_powquty_email = OFF;
 	char default_powquty_adress[MAX_LENGTH] = "";
 	char default_powquty_subject[MAX_LENGTH] = "[EN50160-Event]";
+#endif /* NO_MAIL */
 
 	uci = uci_alloc_context();
 	if (uci == NULL)
@@ -73,14 +79,33 @@ int uci_config_powquty(struct powquty_conf* conf) {
 	{
 		struct uci_section *s = uci_to_section(e);
 		if (strcmp(s->type, "powquty") == 0) {
+			/* general */
 			strcpy(conf->device_tty, default_device_tty);
 			strcpy(conf->dev_uuid, default_dev_uuid);
-			strcpy(conf->mqtt_host, default_mqtt_host);
-			strcpy(conf->mqtt_topic, default_mqtt_topic);
 			strcpy(conf->powquty_path, default_powquty_path);
-
 			conf->powqutyd_print = default_powqutyd_print;
 			conf->max_log_size_kb = default_max_log_size_kb;
+
+			/* mqtt */
+			strcpy(conf->mqtt_host, default_mqtt_host);
+			strcpy(conf->mqtt_topic, default_mqtt_topic);
+#ifndef NO_MQTT
+			strcpy(conf->mqtt_eventhost, default_mqtt_eventhost);
+			strcpy(conf->mqtt_eventtopic, default_mqtt_eventtopic);
+#endif /* NO_MQTT */
+
+#ifndef NO_SLACK
+			/* slack */
+			strcpy(conf->slack_webhook, default_slack_webhook);
+			strcpy(conf->slack_user, default_slack_user);
+			strcpy(conf->slack_channel, default_slack_channel);
+#endif /* NO_SLACK */
+
+#ifndef NO_MAIL
+			/* email */
+			strcpy(conf->powquty_adress, default_powquty_adress);
+			strcpy(conf->powquty_subject, default_powquty_subject);
+#endif /* NO_EMAIL */
 
 			str = uci_lookup_option_string(uci, s, "dev_uuid");
 			if (str == NULL)

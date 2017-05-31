@@ -22,9 +22,9 @@ struct powquty_conf {
 	long max_log_size_kb;
 
 #ifndef NO_MQTT
-	int event_flag;
-	char eventhost[MAX_LENGTH];
-	char eventtopic[MAX_LENGTH];
+	int mqtt_event_flag;
+	char mqtt_eventhost[MAX_LENGTH];
+	char mqtt_eventtopic[MAX_LENGTH];
 #endif
 
 #ifndef NO_SLACK
