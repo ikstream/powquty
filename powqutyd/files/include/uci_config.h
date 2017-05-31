@@ -18,27 +18,27 @@ struct powquty_conf {
 	char mqtt_topic[32];
 	char dev_uuid[32];
 	char powquty_path[32];
-	int powqutyd_print;
 	long max_log_size_kb;
+	int powqutyd_print;
 
 #ifndef NO_MQTT
-	int mqtt_event_flag;
 	char mqtt_eventhost[MAX_LENGTH];
 	char mqtt_eventtopic[MAX_LENGTH];
-#endif
+	int mqtt_event_flag;
+#endif /* NO_MQTT */
 
 #ifndef NO_SLACK
-	int powquty_slack;
 	char slack_webhook[WEBHOOK_LENGTH];
 	char slack_user[MAX_LENGTH];
 	char slack_channel[MAX_LENGTH];
-#endif
+	int powquty_slack;
+#endif /* NO_SLACK */
 
 #ifndef NO_MAIL
-	int powquty_email;
 	char powquty_adress[MAX_LENGTH];
 	char powquty_subject[MAX_LENGTH];
-#endif
+	int powquty_email;
+#endif /*NO_MAIL */
 
 /*	option device_tty '/dev/ttyACM0'
 		option mqtt_host 'localhost'

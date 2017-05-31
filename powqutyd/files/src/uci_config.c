@@ -90,12 +90,14 @@ int uci_config_powquty(struct powquty_conf* conf) {
 			strcpy(conf->mqtt_host, default_mqtt_host);
 			strcpy(conf->mqtt_topic, default_mqtt_topic);
 #ifndef NO_MQTT
+			conf->mqtt_event_flag = default_event_flag;
 			strcpy(conf->mqtt_eventhost, default_mqtt_eventhost);
 			strcpy(conf->mqtt_eventtopic, default_mqtt_eventtopic);
 #endif /* NO_MQTT */
 
 #ifndef NO_SLACK
 			/* slack */
+			conf->powquty_slack = default_powquty_slack;
 			strcpy(conf->slack_webhook, default_slack_webhook);
 			strcpy(conf->slack_user, default_slack_user);
 			strcpy(conf->slack_channel, default_slack_channel);
@@ -103,6 +105,7 @@ int uci_config_powquty(struct powquty_conf* conf) {
 
 #ifndef NO_MAIL
 			/* email */
+			conf->powquty_email = default_powquty_email;
 			strcpy(conf->powquty_adress, default_powquty_adress);
 			strcpy(conf->powquty_subject, default_powquty_subject);
 #endif /* NO_EMAIL */
