@@ -110,6 +110,8 @@ int uci_config_powquty(struct powquty_conf* conf) {
 			strcpy(conf->powquty_subject, default_powquty_subject);
 #endif /* NO_EMAIL */
 
+			/* general */
+			/* uuid */
 			str = uci_lookup_option_string(uci, s, "dev_uuid");
 			if (str == NULL)
 				continue;
@@ -117,28 +119,10 @@ int uci_config_powquty(struct powquty_conf* conf) {
 				continue;
 			}
 			strcpy(conf->dev_uuid, str);
-			printf("looking up dev_uuid: currently ==> %s\n", conf->dev_uuid);
+			printf("looking up dev_uuid: currently ==> %s\n",
+				conf->dev_uuid);
 
-
-			str = uci_lookup_option_string(uci, s, "mqtt_host");
-			if (str == NULL)
-				continue;
-			if (strlen(str) >= MAX_LENGTH) {
-				continue;
-			}
-			strcpy(conf->mqtt_host, str);
-			printf("looking up mqtt_host: currently ==> %s\n", conf->mqtt_host);
-
-
-			str = uci_lookup_option_string(uci, s, "mqtt_topic");
-			if (str == NULL)
-				continue;
-			if (strlen(str) >= MAX_LENGTH) {
-				continue;
-			}
-			strcpy(conf->mqtt_topic, str);
-			printf("looking up mqtt_topic: currently ==> %s\n", conf->mqtt_topic);
-
+			/* device_tty */
 			str = uci_lookup_option_string(uci, s, "device_tty");
 			if (str == NULL)
 				continue;
@@ -146,8 +130,10 @@ int uci_config_powquty(struct powquty_conf* conf) {
 				continue;
 			}
 			strcpy(conf->device_tty, str);
-			printf("looking up device_tty currently ==> %s\n", conf->device_tty);
+			printf("looking up device_tty currently ==> %s\n",
+				conf->device_tty);
 
+			/* powquty_path */
 			str = uci_lookup_option_string(uci, s, "powquty_path");
 			if (str == NULL)
 				continue;
@@ -155,14 +141,139 @@ int uci_config_powquty(struct powquty_conf* conf) {
 				continue;
 			}
 			strcpy(conf->powquty_path, str);
-			printf("looking up powquty_path currently ==> %s\n", conf->powquty_path);
+			printf("looking up powquty_path currently ==> %s\n",
+				conf->powquty_path);
 
+			/* powquty_print */
 			conf->powqutyd_print = uci_lookup_option_int(uci, s,
 					"powqutyd_print");
 
+			/* max_log_size_kb */
 			conf->max_log_size_kb = uci_lookup_option_long(uci, s,
 					"max_log_size_kb");
 
+			/* MQTT */
+			/* mqtt_host */
+			str = uci_lookup_option_string(uci, s, "mqtt_host");
+			if (str == NULL)
+				continue;
+			if (strlen(str) >= MAX_LENGTH) {
+				continue;
+			}
+			strcpy(conf->mqtt_host, str);
+			printf("looking up mqtt_host: currently ==> %s\n",
+				conf->mqtt_host);
+
+			/* mqtt_topic */
+			str = uci_lookup_option_string(uci, s, "mqtt_topic");
+			if (str == NULL)
+				continue;
+			if (strlen(str) >= MAX_LENGTH) {
+				continue;
+			}
+			strcpy(conf->mqtt_topic, str);
+			printf("looking up mqtt_topic: currently ==> %s\n",
+				conf->mqtt_topic);
+
+#ifndef NO_MQTT
+			/* mqtt_eventhost */
+			str = uci_lookup_option_string(uci, s,
+						       "mqtt_eventhost");
+			if (str == NULL)
+				continue;
+			if (strlen(str) >= MAX_LENGTH)
+				continue;
+
+			strcpy(conf->mqtt_eventhost, str);
+			printf("looking up mqtt_eventhost: currently ==> %s\n",
+				conf->mqtt_eventhost);
+
+			/* mqtt_eventtopic */
+			str = uci_lookup_option_string(uci, s,
+						       "mqtt_eventtopic");
+			if (str == NULL)
+				continue;
+			if (strlen(str) >= MAX_LENGTH)
+				continue;
+
+			strcpy(conf->mqtt_eventtopic, str);
+			printf("looking up mqtt_eventtopic: currently ==> %s\n",
+				conf->mqtt_eventtopic);
+
+			/* mqtt_event_flag */
+			conf->mqtt_event_flag = uci_lookup_option_int(uci, s,
+					"mqtt_event_flag");
+#endif /* NO_MQTT */
+
+#ifndef NO_SLACK
+			/* slack_webhook */
+			str = uci_lookup_option_string(uci, s,
+						       "slack_webhook");
+			if (str == NULL)
+				continue;
+			if (strlen(str) >= MAX_LENGTH)
+				continue;
+
+			strcpy(conf->slack_webhook, str);
+			printf("looking up slack_webhook: currently ==> %s\n",
+				conf->slack_webhook);
+
+			/* slack channel */
+			str = uci_lookup_option_string(uci, s,
+						       "slack_channel");
+			if (str == NULL)
+				continue;
+			if (strlen(str) >= MAX_LENGTH)
+				continue;
+
+			strcpy(conf->slack_channel, str);
+			printf("looking up slack_channel: currently ==> %s\n",
+				conf->slack_channel);
+
+			/* slack_user */
+			str = uci_lookup_option_string(uci, s,
+						       "slack_user");
+			if (str == NULL)
+				continue;
+			if (strlen(str) >= MAX_LENGTH)
+				continue;
+
+			strcpy(conf->slack_user, str);
+			printf("looking up slack_user: currently ==> %s\n",
+				conf->slack_user);
+
+			/* powquty_slack */
+			conf->powquty_slack = uci_lookup_option_int(uci, s,
+					      "powquty_slack");
+#endif /* NO_SLACK */
+
+#ifndef NO_MAIL
+			/* powquty_adress */
+			str = uci_lookup_option_string(uci, s,
+						       "powquty_adress");
+			if (str == NULL)
+				continue;
+			if (strlen(str) >= MAX_LENGTH)
+				continue;
+
+			strcpy(conf->powquty_adress, str);
+			printf("looking up powquty_adress: currently ==> %s\n",
+				conf->powquty_adress);
+
+			/* powquty_subject */
+			str = uci_lookup_option_string(uci, s,
+						       "powquty_subject");
+			if (str == NULL)
+				continue;
+			if (strlen(str) >= MAX_LENGTH)
+				continue;
+
+			strcpy(conf->powquty_subject, str);
+			printf("looking up powquty_subject: currently %s\n",
+				conf->powquty_subject);
+			conf->powquty_email = uci_lookup_option_int(uci, s,
+					      "powquty_email");
+#endif /* NO_MAIL */
 		}
 	}
 

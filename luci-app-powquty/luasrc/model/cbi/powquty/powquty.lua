@@ -48,11 +48,11 @@ powquty_email.rmempty = false
 powquty_email.default = false
 
 powquty_adress = s:taboption("mail_conf", Value, "powquty_adress", "powquty_adress", "Email adress to use")
-powquty_adress.datatype = "String"
+powquty_adress.datatype = "string"
 powquty_adress.default = ""
 
 powquty_subject = s:taboption("mail_conf", Value, "powquty_subject", "powquty_subject", "Subject prefix")
-powquty_subject.datatype = "String"
+powquty_subject.datatype = "string"
 powquty_subject.default = "[EN50160-Event]"
 
 mqtt_eventflag = s:taboption("mqtt_conf", Flag, "mqtt_eventflag", "mqtt_eventflag", "If activated, powquty will send mqtt notification on EN50160 Event")
@@ -65,7 +65,7 @@ mqtt_eventhost.datatype = "string"
 mqtt_eventhost.default = "localhost"
 
 mqtt_eventtopic = s:taboption("mqtt_conf", Value, "mqtt_eventtopic", "mqtt_eventtopic", "The topic powquty publishes EN50160 events to")
-mqtt_eventtopic.datatype = "String"
+mqtt_eventtopic.datatype = "string"
 mqtt_eventtopic.default = "device/en50160-event"
 
 powquty_slack = s:taboption("slack_conf", Flag, "powquty_slack", "powquty_slack", "If activated, powquty will send notifications to a slack channel")
