@@ -39,13 +39,16 @@ void stop_powqutyd() {
 
 void handle_args (int argc, char **argv) {
 	int c;
-	while ((c = getopt (argc, argv, "rd")) != -1) {
+	while ((c = getopt(argc, argv, "rdf:")) != -1) {
 		switch (c) {
 			case 'r':
 				set_raw_print(1);
 				break;
 			case 'd':
 				set_debug(1);
+				break;
+			case 'f':
+				set_file_read(optarg);
 				break;
 			default:
 				break;
@@ -93,7 +96,6 @@ int main (int argc, char *argv[]) {
 
 	while (!stop_main){
 		join_calculation();
-
 	}
 
 

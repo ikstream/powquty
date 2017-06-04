@@ -10,6 +10,11 @@
 
 #include "uci_config.h"
 
+/* function to read from file input, or input device
+ * @param input_file: file to read data from
+ */
+int set_file_read(const char *input_file);
+
 /*
  * init function for the calculation functionality
  */

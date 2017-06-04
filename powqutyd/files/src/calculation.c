@@ -21,6 +21,10 @@
 
 const char* device_tty;
 
+#define FILE_READ_OFFSET 0.f
+#define FILE_READ_SCALE 1.f
+
+#define MAX_PATH_LENGTH 512
 
 pPQInstance pPQInst = NULL;
 PQConfig pqConfig;
@@ -33,6 +37,8 @@ static pthread_mutex_t calc_mtx;
 
 static pthread_t calculation_thread;
 static void *calculation_thread_run(void* param);
+
+char *input_file = NULL;
 
 /*
  * It is the index of the first frame of the block.
@@ -91,21 +97,35 @@ int calculation_init(struct powquty_conf* conf) {
 		res= calculation_load_from_config();
 	}
 
-	if(!retrieval_init(config->device_tty)) {
-		printf("DEBUG:\t\tRetrieval Thread started \n");
+	if (!input_file) {
+		if (!retrieval_init(config->device_tty)) {
+			printf("DEBUG:\t\tRetrieval Thread started \n");
+		} else {
+			printf("ERROR:\t\tcouldn't start Retrieval-Thread\n");
+			return -1;
+		}
 	} else {
-		printf("ERROR:\t\tcouldn't start Retrieval-Thread\n");
-		return -1;
+		// Do something else
+		FILE *file = fopen(input_file, "r");
+		fread(in, sizeof(float), SAMPLES_PER_FRAME,
+			file);
+		printf("read from file\n");
 	}
+
 	memset(block_buffer, 0, BLOCK_BUFFER_SIZE * sizeof(short));
 	memset(timestamp_buffer, 0, TS_BUFFER_SIZE * sizeof(long long));
 	memset(in, 0, SAMPLES_PER_BLOCK * sizeof(float));
 
 	pqConfig.sampleRate = 10240;
-	hw_offset = get_hw_offset();
-	pqConfig.HW_offset = hw_offset;
-	hw_scale = get_hw_scaling();
-	pqConfig.HW_scale = hw_scale;
+	if (input_file) {
+		pqConfig.HW_offset = FILE_READ_OFFSET;
+		pqConfig.HW_scale = FILE_READ_SCALE;
+	} else {
+		hw_offset = get_hw_offset();
+		pqConfig.HW_offset = hw_offset;
+		hw_scale = get_hw_scaling();
+		pqConfig.HW_scale = hw_scale;
+	}
 
 	err = createPowerQuality(&pqConfig, &pPQInst, &pqInfo);
 
@@ -124,6 +144,25 @@ int calculation_init(struct powquty_conf* conf) {
 	}
 
 	return res;
+}
+
+int set_file_read(const char *path) {
+	if (path == NULL)
+		return EXIT_FAILURE;
+
+	if (strlen(path) >= MAX_PATH_LENGTH)
+		return EXIT_FAILURE;
+
+	printf("reading from %s\n", path);
+	input_file = malloc(sizeof(char) * MAX_PATH_LENGTH);
+	if (input_file == NULL) {
+		printf("ERROR:\t\t error allocating memory in %s\n",
+		       __func__);
+		return EXIT_FAILURE;
+	} else {
+		strcpy(input_file, path);
+		return EXIT_SUCCESS;
+	}
 }
 
 static void *calculation_thread_run(void* param) {
@@ -145,15 +184,14 @@ static void *calculation_thread_run(void* param) {
 			// print_in_signal();
 			// calculate the idx of timestamps (attention with this)
 
-			// apply the PQ_lib
+			// apply the PQ_liba
 			err = applyPowerQuality(
-					pPQInst,
-					in,
-					&pqResult,
-					NULL,
-					timestamp_buffer+buffer_data_start_idx,
-					FRAMES_PER_BLOCK);
-
+				pPQInst,
+				in,
+				&pqResult,
+				NULL,
+				timestamp_buffer+buffer_data_start_idx,
+				FRAMES_PER_BLOCK);
 			/* exit processing on error */
 			if(err != PQ_NO_ERROR) {
 				printf("TODO:\t\tError applying PQ-Lib\n\t\t\t");
