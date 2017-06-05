@@ -31,14 +31,19 @@ LD_LIBS+=-luci
 
 ifeq ($(NO_MQTT),y)
 else
-  CFLAGS+=-DMQTT 		
+  CFLAGS+=-DMQTT
   LD_LIBS+=-lmosquitto
 endif
 
 ifeq ($(NO_SLACK),y)
 else
-  CFLAGS+=-lcurl
+  CFLAGS+=-lcurl -DSLACK
   LD_LIBS+=-lcurl
+endif
+
+ifeq ($(NO_MAIL), y)
+else
+  CFLAGS+=-DMAIL
 endif
 
 LD_LIBS+=-lpthread
