@@ -105,11 +105,13 @@ int calculation_init(struct powquty_conf* conf) {
 			return -1;
 		}
 	} else {
-		// Do something else
+		//TODO: add error checking
 		FILE *file = fopen(input_file, "r");
 		fread(in, sizeof(float), SAMPLES_PER_FRAME,
 			file);
 		printf("read from file\n");
+		err = PQ_NO_ERROR;
+		fclose(file);
 	}
 
 	memset(block_buffer, 0, BLOCK_BUFFER_SIZE * sizeof(short));
@@ -180,7 +182,9 @@ static void *calculation_thread_run(void* param) {
 			//print_from_ts_buffer();
 
 			// load data into in while converting them to float
-			load_data_to_in();
+			if (!input_file)
+				load_data_to_in();
+
 			// print_in_signal();
 			// calculate the idx of timestamps (attention with this)
 
@@ -337,5 +341,4 @@ void print_results() {
 	if (pqResult.PowerVoltage1012TExist[1]) {
 		printf("PowerVoltageEff_1012T [1]: %f\n", pqResult.PowerVoltageEff_1012T[1]);
 	}
-
 }
