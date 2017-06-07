@@ -258,7 +258,9 @@ void stop_calculation() {
 
 void join_calculation() {
 	printf("DEBUG:\tJoining Calculation Thread\n");
-	join_retrieval();
+	if (!input_file)
+		join_retrieval();
+
 	pthread_cond_destroy(&calc_cond);
 	pthread_mutex_destroy(&calc_mtx);
 	pthread_join(calculation_thread, NULL);
