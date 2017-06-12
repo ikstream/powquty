@@ -111,6 +111,7 @@ int calculation_init(struct powquty_conf* conf) {
 			file);
 		printf("read from file\n");
 		err = PQ_NO_ERROR;
+		data_ready = 1;
 		fclose(file);
 	}
 
@@ -167,6 +168,15 @@ int set_file_read(const char *path) {
 	}
 }
 
+
+void print_in(void) {
+	int i;
+	printf("checking data read from file\n");
+	for (i = 0; i < SAMPLES_PER_FRAME; i++) {
+		printf("in[%d]: %f\n", i, in[i]);
+	}
+}
+
 static void *calculation_thread_run(void* param) {
 	printf("DEBUG:\tCalculation Thread has started\n");
 	while(!stop_calculation_run) {
@@ -188,6 +198,7 @@ static void *calculation_thread_run(void* param) {
 			// print_in_signal();
 			// calculate the idx of timestamps (attention with this)
 
+			print_in();
 			// apply the PQ_liba
 			err = applyPowerQuality(
 				pPQInst,
