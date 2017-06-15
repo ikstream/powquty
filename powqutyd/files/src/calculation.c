@@ -85,6 +85,7 @@ int calculation_load_from_config() {
 int calculation_init(struct powquty_conf* conf) {
 	int res=0;
 
+	printf("init calc\n");
 	//long long timestamp_buffer[TS_BUFFER_SIZE];
 	//float in[SAMPLES_PER_BLOCK];
 	block_buffer = calloc(sizeof(short),BLOCK_BUFFER_SIZE);
@@ -97,7 +98,9 @@ int calculation_init(struct powquty_conf* conf) {
 		res= calculation_load_from_config();
 	}
 
+	printf("input_file: %s\n", input_file);
 	if (!input_file) {
+		printf("no input file\n");
 		if (!retrieval_init(config->device_tty)) {
 			printf("DEBUG:\t\tRetrieval Thread started \n");
 		} else {
@@ -107,17 +110,25 @@ int calculation_init(struct powquty_conf* conf) {
 	} else {
 		//TODO: add error checking
 		FILE *file = fopen(input_file, "r");
+
+		printf("init file input\n");
+		memset(in, 0, SAMPLES_PER_BLOCK * sizeof(float));
+		printf("input file is: %s\n", input_file);
 		fread(in, sizeof(float), SAMPLES_PER_FRAME,
 			file);
 		printf("read from file\n");
 		err = PQ_NO_ERROR;
 		data_ready = 1;
 		fclose(file);
+		pthread_cond_signal(&calc_cond);
+		printf("send signal\n");
 	}
 
 	memset(block_buffer, 0, BLOCK_BUFFER_SIZE * sizeof(short));
 	memset(timestamp_buffer, 0, TS_BUFFER_SIZE * sizeof(long long));
-	memset(in, 0, SAMPLES_PER_BLOCK * sizeof(float));
+	if (!input_file)
+		memset(in, 0, SAMPLES_PER_BLOCK * sizeof(float));
+
 
 	pqConfig.sampleRate = 10240;
 	if (input_file) {
@@ -179,12 +190,14 @@ void print_in(void) {
 
 static void *calculation_thread_run(void* param) {
 	printf("DEBUG:\tCalculation Thread has started\n");
+	printf("stop_calculation_run: %d\n", stop_calculation_run);
 	while(!stop_calculation_run) {
 
 		pthread_mutex_lock(&calc_mtx);
 		pthread_cond_wait(&calc_cond,&calc_mtx);
 		pthread_mutex_unlock(&calc_mtx);
 
+		printf("data ready: %d", data_ready);
 		if(data_ready) {
 			// do the calculation
 			//printf("\n\ncalculating @ idx: %d\n", buffer_data_start_idx );
