@@ -14,7 +14,11 @@
 struct powquty_conf {
 	/* general */
 	char device_tty[32];
+	char mqtt_uname[32];
+	char mqtt_pw[32];
 	char dev_uuid[32];
+	char dev_lat[32];
+	char dev_lon[32];
 	char powquty_path[32];
 	long max_log_size_kb;
 	int powqutyd_print;
@@ -47,6 +51,8 @@ struct powquty_conf {
 		option mqtt_host 'localhost'
 		option mqtt_topic 'devices/update'
 		option dev_uuid 'BERTUB001'
+		option dev_lat '51.156033'
+		option dev_lon '10.715828'
 		option powqutyd_print '1'
 		*/
 };

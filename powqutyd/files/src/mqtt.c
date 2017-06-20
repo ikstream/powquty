@@ -13,10 +13,15 @@
 #include <pthread.h>
 #include "helper.h"
 #include "uci_config.h"
+#include <sys/time.h>
 
 static const char* mqtt_host = "localhost";
 static const char* mqtt_topic = "devices/update";
+static const char* mqtt_uname = "username";
+static const char* mqtt_pw = "password";
 static const char* dev_uuid = "BERTUB001";
+static const char* dev_lat = "55.0083525";
+static const char* dev_lon = "82.935732";
 //static const char* dev_gps = "BERTUB001";
 static const char* dev_FW_ver = "0.1";
 static const char* dev_APP_ver = "0.1";
@@ -34,6 +39,7 @@ static char payload[MAX_MQTT_MSG_LEN];
 struct mosquitto *mosq;
 
 void stop_mosquitto(){
+	publish_device_offline();
 	mosquitto_thread_stop = 1;
 	printf("DEBUG:\tJoining MQTT Thread\n");
 	pthread_join(mosquitto_thread, NULL);
@@ -89,6 +95,8 @@ int mqtt_load_from_config() {
 
 	mqtt_topic = config->mqtt_topic;
 
+	mqtt_uname = config->mqtt_uname;
+	mqtt_pw = config->mqtt_pw;
 
 /*
 	if(!config_lookup_string(get_cfg_ptr(), "dev_uuid", &dev_uuid)) {
@@ -98,6 +106,8 @@ int mqtt_load_from_config() {
 	dev_uuid = config->dev_uuid;
 	printf("dev_uuid: %s\n", dev_uuid);
 
+	dev_lat = config->dev_lat;
+	dev_lon = config->dev_lon;
 
 	/*if(!config_lookup_string(get_cfg_ptr(), "dev_gps", &dev_gps)) {
 		res= -1;
@@ -134,25 +144,39 @@ int mqtt_init (struct powquty_conf* conf) {
 	//if(is_config_loaded()) {
 	res = mqtt_load_from_config();
 	//}
+	int vers [] = {0,0,0};
+	int ret = mosquitto_lib_version(&vers[0], &vers[1], &vers[2]);
+	printf("MQTT_LIB_VERSION: \tRet: %d\tMaj: %d\tMin: %d\tRev: %d\n",ret, vers[0], vers[1], vers[2]);
 	printf("DEBUG:\tCreating MQTT Thread\n");
 	res = pthread_create(&mosquitto_thread,NULL, mosquitto_thread_main,NULL);
 	return res;
 }
 
+void publish_device_gps() {
+	// UUID,TIMESTAMP,2,LATITUDE, LONGITUDE,ACCURANCY,PROVIDER,NETFREQ
+	payload[0] = '\0';
+	struct timeval tv;
+	gettimeofday(&tv,NULL);
+	sprintf(payload,"%s,%lu.%lu,2,%s,%s,0,2,50",dev_uuid,tv.tv_sec, (long int)tv.tv_usec/100, dev_lat, dev_lon);
+	mqtt_publish_payload();
+}
+
 void publish_device_offline() {
 	payload[0] = '\0';
-	long long ts = get_curr_time_in_milliseconds();
-	sprintf(payload,"%s,%lld,0",dev_uuid,ts);
+	struct timeval tv;
+	gettimeofday(&tv,NULL);
+	sprintf(payload,"%s,%lu.%lu,0",dev_uuid,tv.tv_sec, (long int)tv.tv_usec/100);
 	mqtt_publish_payload();
 }
 
 void publish_device_online() {
 	payload[0] = '\0';
-	long long ts = get_curr_time_in_milliseconds();
+	struct timeval tv;
+	gettimeofday(&tv,NULL);
 	sprintf(payload,
-			"%s,%lld,1,%s,%s,%s",
+			"%s,%lu.%lu,1,%s,%s,%s",
 			dev_uuid,
-			ts,
+			tv.tv_sec, (long int)tv.tv_usec/100,
 			dev_FW_ver,
 			dev_APP_ver,
 			dev_HW_ver);
@@ -162,13 +186,16 @@ void publish_device_online() {
 void publish_measurements(PQResult pqResult) {
 	// printf("publish_measurements: \n");
 	payload[0] = '\0';
-	long long ts = get_curr_time_in_milliseconds();
-	long ts_sec = get_curr_time_in_seconds();
+	//long long ts = get_curr_time_in_milliseconds();
+	struct timeval tv;
+	gettimeofday(&tv,NULL);
+	//long ts_sec = get_curr_time_in_seconds();
 	sprintf(payload,
-			"%s,%ld,%lld,3,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f",
+			//"%s,%ld,%lld,3,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f",
+			"%s,%lu.%lu,3,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f",
 			dev_uuid,
-			ts_sec,
-			ts,
+			tv.tv_sec, (long int)tv.tv_usec/100,
+			//ts,
 			pqResult.PowerVoltageEff_5060T,
 			pqResult.PowerFrequency5060T,
 			pqResult.Harmonics[0],
@@ -198,14 +225,14 @@ void mqtt_publish_msg(const char* msg) {
 int mqtt_publish(struct mosquitto *mosq, const char* msg ) {
 	int res;
 	unsigned int len = (unsigned int)strlen(msg);
-	res =  mosquitto_publish(mosq, NULL, mqtt_topic,len, (const unsigned char *)msg, 0, false);
+	res =  mosquitto_publish(mosq, NULL, mqtt_topic, len, (const unsigned char *)msg, 0, true);
 	return res;
 }
 
 static void *mosquitto_thread_main(void* param) {
 	printf("DEBUG:\tMQTT Thread has started\n");
 	char buff[250];
-	char* clientid = "MQTT_Client";
+	char* clientid = (char *) dev_uuid;
 
 	int mosq_loop= 0, rc = 0, pub_res = 0;
 	// char payload_msg[250] ="";
@@ -214,6 +241,8 @@ static void *mosquitto_thread_main(void* param) {
 	mosq = mosquitto_new(clientid, true, 0);
 
 	if(mosq){
+		mosquitto_username_pw_set (mosq, mqtt_uname, mqtt_pw);
+		//mosquitto_threaded_set(mosq, true); ==> setting it to true seem to hinder device_offline msg.
 		rc = mosquitto_connect(mosq, mqtt_host, mqtt_port, 60);
 		if(rc != MOSQ_ERR_SUCCESS) {
 			printf("Error: mosquitto_connect\n");

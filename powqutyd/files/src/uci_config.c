@@ -38,6 +38,9 @@ int uci_config_powquty(struct powquty_conf* conf) {
 	char default_powquty_path[MAX_LENGTH] = "/tmp/powquty.log";
 	char default_dev_uuid[MAX_LENGTH] = "BERTUB001";
 	int default_powqutyd_print = ON;
+	char default_dev_uuid[32] = "BERTUB001";
+	char default_dev_lat[32] = "55.0083525";
+	char default_dev_lon[32] = "82.935732";
 	long default_max_log_size_kb = 4096;
 
 	/* regular MQTT handling */
@@ -82,7 +85,10 @@ int uci_config_powquty(struct powquty_conf* conf) {
 			/* general */
 			strcpy(conf->device_tty, default_device_tty);
 			strcpy(conf->dev_uuid, default_dev_uuid);
-			strcpy(conf->powquty_path, default_powquty_path);
+			strcpy(conf->dev_lat, default_dev_lat);
+			strcpy(conf->dev_lon, default_dev_lon);
+			strcpy(conf->mqtt_host, default_mqtt_host);
+			strcpy(conf->mqtt_topic, default_mqtt_topic);
 			conf->powqutyd_print = default_powqutyd_print;
 			conf->max_log_size_kb = default_max_log_size_kb;
 
@@ -133,6 +139,26 @@ int uci_config_powquty(struct powquty_conf* conf) {
 			printf("looking up device_tty currently ==> %s\n",
 				conf->device_tty);
 
+			/* latitude */
+			str = uci_lookup_option_string(uci, s, "dev_lat");
+			if (str == NULL)
+				continue;
+			if (strlen(str) >= MAX_STR_LEN) {
+				continue;
+			}
+			strcpy(conf->dev_lat, str);
+			printf("looking up dev_lat: currently ==> %s\n", conf->dev_lat);
+
+			/* longitude */
+			str = uci_lookup_option_string(uci, s, "dev_lon");
+			if (str == NULL)
+				continue;
+			if (strlen(str) >= MAX_STR_LEN) {
+				continue;
+			}
+			strcpy(conf->dev_lon, str);
+			printf("looking up dev_lon: currently ==> %s\n", conf->dev_lon);
+
 			/* powquty_path */
 			str = uci_lookup_option_string(uci, s, "powquty_path");
 			if (str == NULL)
@@ -174,6 +200,28 @@ int uci_config_powquty(struct powquty_conf* conf) {
 			strcpy(conf->mqtt_topic, str);
 			printf("looking up mqtt_topic: currently ==> %s\n",
 				conf->mqtt_topic);
+
+			/* mqtt username */
+			str = uci_lookup_option_string(uci, s, "mqtt_uname");
+			if (str == NULL)
+				continue;
+			if (strlen(str) >= MAX_STR_LEN) {
+				continue;
+			}
+			strcpy(conf->mqtt_uname, str);
+			printf("looking up mqtt_uname: currently ==> %s\n", conf->mqtt_uname);
+
+			/* mqtt password */
+			str = uci_lookup_option_string(uci, s, "mqtt_pw");
+			if (str == NULL)
+				continue;
+			if (strlen(str) >= MAX_STR_LEN) {
+				continue;
+			}
+			strcpy(conf->mqtt_pw, str);
+			printf("looking up mqtt_pw: currently ==> %s\n", conf->mqtt_pw);
+
+			str = uci_lookup_option_string(uci, s, "device_tty");
 
 #ifndef NO_MQTT
 			/* mqtt_eventhost */
