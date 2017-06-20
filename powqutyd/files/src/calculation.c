@@ -120,8 +120,6 @@ int calculation_init(struct powquty_conf* conf) {
 		err = PQ_NO_ERROR;
 		data_ready = 1;
 		fclose(file);
-		pthread_cond_signal(&calc_cond);
-		printf("send signal\n");
 	}
 
 	memset(block_buffer, 0, BLOCK_BUFFER_SIZE * sizeof(short));
