@@ -26,14 +26,14 @@ struct powquty_conf {
 	/* MQTT */
 	char mqtt_host[32];
 	char mqtt_topic[32];
-#ifndef NO_MQTT
+#ifdef MQTT
 	char mqtt_eventhost[MAX_LENGTH];
 	char mqtt_eventtopic[MAX_LENGTH];
 	int mqtt_event_flag;
 #endif /* NO_MQTT */
 
 	/* Slack */
-#ifndef NO_SLACK
+#ifdef SLACK
 	char slack_webhook[WEBHOOK_LENGTH];
 	char slack_user[MAX_LENGTH];
 	char slack_channel[MAX_LENGTH];
@@ -41,7 +41,7 @@ struct powquty_conf {
 #endif /* NO_SLACK */
 
 	/* Mail */
-#ifndef NO_MAIL
+#ifdef MAIL
 	char powquty_adress[MAX_LENGTH];
 	char powquty_subject[MAX_LENGTH];
 	int powquty_email;

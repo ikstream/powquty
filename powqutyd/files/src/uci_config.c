@@ -47,14 +47,14 @@ int uci_config_powquty(struct powquty_conf* conf) {
 	char default_mqtt_host[MAX_LENGTH] = "localhost";
 	char default_mqtt_topic[MAX_LENGTH] = "devices/update";
 
-#ifndef NO_MQTT
+#ifdef MQTT
 	/* MQTT event handling */
 	int default_event_flag = ON;
 	char default_mqtt_eventhost[MAX_LENGTH] = "localhost";
 	char default_mqtt_eventtopic[MAX_LENGTH] = "device/en50160-event";
 #endif /* NO_MQTT */
 
-#ifndef NO_SLACK
+#ifdef SLACK
 	/* Slack Config */
 	int default_powquty_slack = OFF;
 	char default_slack_webhook[WEBHOOK_LENGTH] = "";
@@ -62,7 +62,7 @@ int uci_config_powquty(struct powquty_conf* conf) {
 	char default_slack_channel[MAX_LENGTH] = "#general";
 #endif /* NO_SLACK */
 
-#ifndef NO_MAIL
+#ifdef MAIL
 	/* email configuration */
 	int default_powquty_email = OFF;
 	char default_powquty_adress[MAX_LENGTH] = "";
@@ -95,13 +95,13 @@ int uci_config_powquty(struct powquty_conf* conf) {
 			/* mqtt */
 			strcpy(conf->mqtt_host, default_mqtt_host);
 			strcpy(conf->mqtt_topic, default_mqtt_topic);
-#ifndef NO_MQTT
+#ifdef MQTT
 			conf->mqtt_event_flag = default_event_flag;
 			strcpy(conf->mqtt_eventhost, default_mqtt_eventhost);
 			strcpy(conf->mqtt_eventtopic, default_mqtt_eventtopic);
 #endif /* NO_MQTT */
 
-#ifndef NO_SLACK
+#ifdef SLACK
 			/* slack */
 			conf->powquty_slack = default_powquty_slack;
 			strcpy(conf->slack_webhook, default_slack_webhook);
@@ -109,7 +109,7 @@ int uci_config_powquty(struct powquty_conf* conf) {
 			strcpy(conf->slack_channel, default_slack_channel);
 #endif /* NO_SLACK */
 
-#ifndef NO_MAIL
+#ifndef MAIL
 			/* email */
 			conf->powquty_email = default_powquty_email;
 			strcpy(conf->powquty_adress, default_powquty_adress);
@@ -223,7 +223,7 @@ int uci_config_powquty(struct powquty_conf* conf) {
 
 			str = uci_lookup_option_string(uci, s, "device_tty");
 
-#ifndef NO_MQTT
+#ifdef MQTT
 			/* mqtt_eventhost */
 			str = uci_lookup_option_string(uci, s,
 						       "mqtt_eventhost");
@@ -253,7 +253,7 @@ int uci_config_powquty(struct powquty_conf* conf) {
 					"mqtt_event_flag");
 #endif /* NO_MQTT */
 
-#ifndef NO_SLACK
+#ifdef SLACK
 			/* slack_webhook */
 			str = uci_lookup_option_string(uci, s,
 						       "slack_webhook");
@@ -295,7 +295,7 @@ int uci_config_powquty(struct powquty_conf* conf) {
 					      "powquty_slack");
 #endif /* NO_SLACK */
 
-#ifndef NO_MAIL
+#ifdef MAIL
 			/* powquty_adress */
 			str = uci_lookup_option_string(uci, s,
 						       "powquty_adress");
