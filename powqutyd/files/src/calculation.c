@@ -100,7 +100,6 @@ int calculation_init(struct powquty_conf* conf) {
 
 	printf("input_file: %s\n", input_file);
 	if (!input_file) {
-		printf("no input file\n");
 		if (!retrieval_init(config->device_tty)) {
 			printf("DEBUG:\t\tRetrieval Thread started \n");
 		} else {
@@ -108,16 +107,16 @@ int calculation_init(struct powquty_conf* conf) {
 			return -1;
 		}
 	} else {
-		//TODO: add error checking
 		FILE *file = fopen(input_file, "r");
-
+		if (file == NULL) {
+			printf("could not open file %s\n", input_file);
+			return -1;
+		}
 		printf("init file input\n");
 		memset(in, 0, SAMPLES_PER_BLOCK * sizeof(float));
-		printf("input file is: %s\n", input_file);
 		fread(in, sizeof(float), SAMPLES_PER_FRAME,
 			file);
 		printf("read from file\n");
-		err = PQ_NO_ERROR;
 		data_ready = 1;
 		fclose(file);
 	}
@@ -129,14 +128,14 @@ int calculation_init(struct powquty_conf* conf) {
 
 
 	pqConfig.sampleRate = 10240;
-	if (input_file) {
-		pqConfig.HW_offset = FILE_READ_OFFSET;
-		pqConfig.HW_scale = FILE_READ_SCALE;
-	} else {
+	if (!input_file) {
 		hw_offset = get_hw_offset();
 		pqConfig.HW_offset = hw_offset;
 		hw_scale = get_hw_scaling();
 		pqConfig.HW_scale = hw_scale;
+	} else {
+		pqConfig.HW_offset = FILE_READ_OFFSET;
+		pqConfig.HW_scale = FILE_READ_SCALE;
 	}
 
 	err = createPowerQuality(&pqConfig, &pPQInst, &pqInfo);
@@ -147,7 +146,6 @@ int calculation_init(struct powquty_conf* conf) {
 	if(err == PQ_NO_ERROR) {
 		// start calculation thread
 		res = pthread_create(&calculation_thread,NULL, calculation_thread_run,NULL);
-
 	} else {
 		// TODO see what happend
 		printf("ERROR:\t\terror creating PQ_Instance, errno: %d\n", err);
