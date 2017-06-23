@@ -85,7 +85,6 @@ int calculation_load_from_config() {
 int calculation_init(struct powquty_conf* conf) {
 	int res=0;
 
-	printf("init calc\n");
 	//long long timestamp_buffer[TS_BUFFER_SIZE];
 	//float in[SAMPLES_PER_BLOCK];
 	block_buffer = calloc(sizeof(short),BLOCK_BUFFER_SIZE);
@@ -98,7 +97,6 @@ int calculation_init(struct powquty_conf* conf) {
 		res= calculation_load_from_config();
 	}
 
-	printf("input_file: %s\n", input_file);
 	if (!retrieval_init(config->device_tty)) {
 		printf("DEBUG:\t\tRetrieval Thread started \n");
 	} else {
@@ -146,7 +144,6 @@ int set_file_read(const char *path) {
 	if (strlen(path) >= MAX_PATH_LENGTH)
 		return EXIT_FAILURE;
 
-	printf("reading from %s\n", path);
 	input_file = malloc(sizeof(char) * MAX_PATH_LENGTH);
 	if (input_file == NULL) {
 		printf("ERROR:\t\t error allocating memory in %s\n",
@@ -165,23 +162,13 @@ int get_input_file_state() {
 		return 0;
 }
 
-void print_in(void) {
-	int i;
-	printf("checking data read from file\n");
-	for (i = 0; i < SAMPLES_PER_FRAME; i++) {
-		printf("in[%d]: %f\n", i, in[i]);
-	}
-}
-
 static void *calculation_thread_run(void* param) {
 	printf("DEBUG:\tCalculation Thread has started\n");
-	printf("stop_calculation_run: %d\n", stop_calculation_run);
 	FILE *file = fopen(input_file, "r");
 	if (file == NULL) {
-		printf("could not open file %s\n", input_file);
+		printf("ERROR:\tCould not open file %s\n", input_file);
 		return NULL;
 	}
-	printf("init file input\n");
 	while(!stop_calculation_run) {
 
 		pthread_mutex_lock(&calc_mtx);
@@ -191,10 +178,9 @@ static void *calculation_thread_run(void* param) {
 			if (!feof(file)) {
 				fread(in, sizeof(float), 2048,
 					file);
-				printf("read from file\n");
 				data_ready = 1;
 			} else {
-				printf("reached end of file\n");
+				printf("DEBUG:\tReached end of file\n");
 				break;
 			}
 
@@ -204,7 +190,6 @@ static void *calculation_thread_run(void* param) {
 			}
 		}
 
-		printf("data ready: %d\n", data_ready);
 		if(data_ready) {
 			// do the calculation
 			//printf("\n\ncalculating @ idx: %d\n", buffer_data_start_idx );
@@ -219,7 +204,6 @@ static void *calculation_thread_run(void* param) {
 			// calculate the idx of timestamps (attention with this)
 
 			// apply the PQ_liba
-			printf("applying PowerQuality Lib scale:%f offset:%f\n", pqConfig.HW_offset,pqConfig.HW_scale);
 			err = applyPowerQuality(
 				pPQInst,
 				in,
@@ -236,19 +220,11 @@ static void *calculation_thread_run(void* param) {
 			}
 			// print_results();
 
-			printf("Harmonics exist: %d\n", pqResult.HarmonicsExist);
-			if (input_file) {
+			if(pqResult.HarmonicsExist) {
 				store_to_file(pqResult, config);
 #ifdef MQTT
 				publish_measurements(pqResult);
 #endif
-			} else {
-				if(pqResult.HarmonicsExist) {
-					store_to_file(pqResult, config);
-#ifdef MQTT
-					publish_measurements(pqResult);
-#endif
-				}
 			}
 			data_ready=0;
 		}
