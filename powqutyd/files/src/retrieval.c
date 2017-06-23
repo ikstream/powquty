@@ -235,36 +235,39 @@ int serial_port_open(const char* device) {
 int retrieval_init(const char* tty_device) {
 	int res = 0;
 
-	// open fd
-	retrieval_fd = serial_port_open(tty_device);
-	if(retrieval_fd<0) {
-		printf("\ncannot open %s\n",tty_device);
-		return retrieval_fd;
-	}
+	if (!get_input_file_state()) {
+		// open fd
+		retrieval_fd = serial_port_open(tty_device);
+		if(retrieval_fd<0) {
+			printf("\ncannot open %s\n",tty_device);
+			return retrieval_fd;
+		}
 
-	// initialize Buffers, ring_buffer etc.
-	memset(current_frame,0,MAX_FRAME_SIZE);
+		// initialize Buffers, ring_buffer etc.
+		memset(current_frame,0,MAX_FRAME_SIZE);
 
-	if (raw_print) {
-		if(!raw_dump_init()) {
-			printf("DEBUG:\tDump Thread Created\n");
-			//stop_sampling();
+		if (raw_print) {
+			if(!raw_dump_init()) {
+				printf("DEBUG:\tDump Thread Created\n");
+				//stop_sampling();
+			}
 		}
 	}
-
 	// start reading thread
 	printf("DEBUG:\tCreating Retrieval Thread\n");
 	res = pthread_create(&reading_thread,NULL, reading_thread_run,NULL);
 
-	// send command get Hardware parameters
-	// Blocking call until we get resp see calibrate_device()
-	if (calibrate_device() <= 0) {
-		// failed to calibrate device
-		res = -1;
-	}
+	if (!get_input_file_state()) {
+		// send command get Hardware parameters
+		// Blocking call until we get resp see calibrate_device()
+		if (calibrate_device() <= 0) {
+			// failed to calibrate device
+			res = -1;
+		}
 
-	if (start_sampling() <= 0){
-		res = -1;
+		if (start_sampling() <= 0){
+			res = -1;
+		}
 	}
 
 	return res;
@@ -297,6 +300,12 @@ static void *reading_thread_run(void* param) {
 	// fd[0].events = POLLIN | POLLRDNORM | POLLRDBAND | POLLPRI;
 
 	while (!stop_reading) {
+
+		if (get_input_file_state()) {
+			do_calculation(32);
+			continue;
+		}
+
 		// poll(fd,1,poll_time_out_ms);
 		offset = 0;
 		read_size = 0;

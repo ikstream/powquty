@@ -99,43 +99,26 @@ int calculation_init(struct powquty_conf* conf) {
 	}
 
 	printf("input_file: %s\n", input_file);
-	if (!input_file) {
-		if (!retrieval_init(config->device_tty)) {
-			printf("DEBUG:\t\tRetrieval Thread started \n");
-		} else {
-			printf("ERROR:\t\tcouldn't start Retrieval-Thread\n");
-			return -1;
-		}
+	if (!retrieval_init(config->device_tty)) {
+		printf("DEBUG:\t\tRetrieval Thread started \n");
 	} else {
-		FILE *file = fopen(input_file, "r");
-		if (file == NULL) {
-			printf("could not open file %s\n", input_file);
-			return -1;
-		}
-		printf("init file input\n");
-		memset(in, 0, SAMPLES_PER_BLOCK * sizeof(float));
-		fread(in, sizeof(float), SAMPLES_PER_FRAME,
-			file);
-		printf("read from file\n");
-		data_ready = 1;
-		fclose(file);
+		printf("ERROR:\t\tcouldn't start Retrieval-Thread\n");
+		return -1;
 	}
 
 	memset(block_buffer, 0, BLOCK_BUFFER_SIZE * sizeof(short));
 	memset(timestamp_buffer, 0, TS_BUFFER_SIZE * sizeof(long long));
-	if (!input_file)
-		memset(in, 0, SAMPLES_PER_BLOCK * sizeof(float));
-
+	memset(in, 0, SAMPLES_PER_BLOCK * sizeof(float));
 
 	pqConfig.sampleRate = 10240;
-	if (!input_file) {
+	if (input_file) {
+		pqConfig.HW_offset = FILE_READ_OFFSET;
+		pqConfig.HW_scale = FILE_READ_SCALE;
+	} else {
 		hw_offset = get_hw_offset();
 		pqConfig.HW_offset = hw_offset;
 		hw_scale = get_hw_scaling();
 		pqConfig.HW_scale = hw_scale;
-	} else {
-		pqConfig.HW_offset = FILE_READ_OFFSET;
-		pqConfig.HW_scale = FILE_READ_SCALE;
 	}
 
 	err = createPowerQuality(&pqConfig, &pPQInst, &pqInfo);
@@ -175,6 +158,12 @@ int set_file_read(const char *path) {
 	}
 }
 
+int get_input_file_state() {
+	if (input_file)
+		return 1;
+	else
+		return 0;
+}
 
 void print_in(void) {
 	int i;
@@ -187,13 +176,35 @@ void print_in(void) {
 static void *calculation_thread_run(void* param) {
 	printf("DEBUG:\tCalculation Thread has started\n");
 	printf("stop_calculation_run: %d\n", stop_calculation_run);
+	FILE *file = fopen(input_file, "r");
+	if (file == NULL) {
+		printf("could not open file %s\n", input_file);
+		return NULL;
+	}
+	printf("init file input\n");
 	while(!stop_calculation_run) {
 
 		pthread_mutex_lock(&calc_mtx);
 		pthread_cond_wait(&calc_cond,&calc_mtx);
 		pthread_mutex_unlock(&calc_mtx);
+		if (input_file) {
+			if (!feof(file)) {
+				fread(in, sizeof(float), 2048,
+					file);
+				printf("read from file\n");
+				data_ready = 1;
+			} else {
+				printf("reached end of file\n");
+				break;
+			}
 
-		printf("data ready: %d", data_ready);
+			if (ferror(file)) {
+				printf("ERROR: error occurred during file read\n");
+				break;
+			}
+		}
+
+		printf("data ready: %d\n", data_ready);
 		if(data_ready) {
 			// do the calculation
 			//printf("\n\ncalculating @ idx: %d\n", buffer_data_start_idx );
@@ -207,8 +218,8 @@ static void *calculation_thread_run(void* param) {
 			// print_in_signal();
 			// calculate the idx of timestamps (attention with this)
 
-			print_in();
 			// apply the PQ_liba
+			printf("applying PowerQuality Lib scale:%f offset:%f\n", pqConfig.HW_offset,pqConfig.HW_scale);
 			err = applyPowerQuality(
 				pPQInst,
 				in,
@@ -225,15 +236,26 @@ static void *calculation_thread_run(void* param) {
 			}
 			// print_results();
 
-			if(pqResult.HarmonicsExist) {
+			printf("Harmonics exist: %d\n", pqResult.HarmonicsExist);
+			if (input_file) {
 				store_to_file(pqResult, config);
 #ifdef MQTT
 				publish_measurements(pqResult);
 #endif
+			} else {
+				if(pqResult.HarmonicsExist) {
+					store_to_file(pqResult, config);
+#ifdef MQTT
+					publish_measurements(pqResult);
+#endif
+				}
 			}
 			data_ready=0;
 		}
 	}
+	if (input_file)
+		fclose(file);
+
 	printf("DEBUG:\tCalculation Thread has ended\n");
 	return NULL;
 }
@@ -257,6 +279,10 @@ void do_calculation(unsigned int stored_frame_idx) {
 	pthread_mutex_unlock(&calc_mtx);
 
 	data_ready = 1;
+	if (input_file) {
+		return;
+	}
+
 	if (stored_frame_idx<32) {
 		buffer_data_start_idx = (stored_frame_idx + 128);
 	} else  {
@@ -278,8 +304,7 @@ void stop_calculation() {
 
 void join_calculation() {
 	printf("DEBUG:\tJoining Calculation Thread\n");
-	if (!input_file)
-		join_retrieval();
+	join_retrieval();
 
 	pthread_cond_destroy(&calc_cond);
 	pthread_mutex_destroy(&calc_mtx);

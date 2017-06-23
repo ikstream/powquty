@@ -44,7 +44,8 @@ define Package/powqutyd
 	CATEGORY:=Utilities
 	DEPENDS:=+libconfig +kmod-usb-acm \
 		 +!POWQUTYD_NO_MQTT:libmosquitto +libuci \
-		 +!POWQUTYD_NO_SLACK:libcurl
+		 +!POWQUTYD_NO_SLACK:libcurl \
+		 +!POWQUTYD_NO_EMAIL:mailsend
 	MAINTAINER:=El Sayed
 	TITLE:=Power quality measurement and analyzer toolset
 endef
