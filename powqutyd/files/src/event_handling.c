@@ -14,7 +14,22 @@
 
 void send_event(PQEvent pqe, struct powquty_conf *conf) {
 	char *msg = malloc(sizeof(char) * MAX_MSG_LENGTH);
+	if (msg == NULL) {
+		printf("Could not allocate memory for msg in %s\n", __func__);
+		return;
+	}
+
 	char *event = malloc(sizeof(char) * MAX_EVENT_LENGTH);
+	if (event == NULL) {
+		printf("Could not allocate memory for event in %s\n", __func__);
+		return;
+	}
+
+	char *local_time = malloc(sizeof(char) * MAX_TIME_LENGTH);
+	if (local_time == NULL) {
+		printf"Could not allocate memory for time in %s\n", __func__);
+		return;
+	}
 
 	switch (pqe.type) {
 		case (int)PQ_EVENT_TYPE_DIP:
@@ -64,6 +79,10 @@ void send_event(PQEvent pqe, struct powquty_conf *conf) {
 		}
 	}
 #endif /* Slack */
+
+	free(msg);
+	free(event);
+	free(local_time)
 }
 
 void handle_event(PQResult pqResult, struct powquty_conf *conf) {
