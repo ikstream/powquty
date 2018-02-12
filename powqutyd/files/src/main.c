@@ -10,9 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "PQ_App.h"
-#ifdef MQTT
-#include "mqtt.h"
-#endif
 #include "calculation.h"
 #include "file_handling.h"
 #include "retrieval.h"
@@ -23,9 +20,6 @@ static volatile int stop_main = 0;
 
 void handle_signal()
 {
-#ifdef MQTT
-	stop_mosquitto();
-#endif
 	stop_calculation();
 	printf("DEBUG:\tThreads should have stopped\n");
 	stop_main = 1;
@@ -36,9 +30,6 @@ void stop_powqutyd() {
 }
 
 void stop_powqutyd_file_read() {
-#ifdef MQTT
-	stop_mosquitto();
-#endif
 	stop_file_read();
 	printf("DEBUG:\tThreads should have stopped\n");
 	stop_main = 1;
@@ -80,26 +71,11 @@ int main (int argc, char *argv[]) {
 	// PQ_ERROR err = PQ_NO_ERROR;
 
 	printf("Starting powqutyd ...\n");
-#ifdef MQTT
-	if(!mqtt_init(&conf)) {
-		printf("MQTT Thread started \n");
-	} else {
-		printf("couldn't start MQTT-Thread\n");
-		// return -1;
-	}
-#endif
 	handle_args(argc, argv);
 
 	printf("arguments handled\n");
 	if (get_input_file_state()) {
 		printf("use input file\n");
-//		sleep(10);
-		if (!file_read_init(&conf)) {
-#ifdef MQTT
-			publish_device_online();
-			publish_device_gps();
-#endif
-		}
 		while (!stop_main) {
 			join_file_read();
 		}
@@ -108,14 +84,7 @@ int main (int argc, char *argv[]) {
 	printf("not input_file\n");
 	if(!calculation_init(&conf)) {
 		printf("Calculation Thread started\n");
-#ifdef MQTT
-		publish_device_online();
-		publish_device_gps();
-#endif
 	} else {
-#ifdef MQTT
-		stop_mosquitto();
-#endif
 		exit(EXIT_FAILURE);
 	}
 

@@ -173,9 +173,6 @@ static void *calculation_thread_run(void* param) {
 
 			if (pqResult.HarmonicsExist) {
 				store_to_file(pqResult, config);
-#ifdef MQTT
-				publish_measurements(pqResult);
-#endif
 			}
 			data_ready=0;
 		}

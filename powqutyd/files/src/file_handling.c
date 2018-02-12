@@ -186,9 +186,6 @@ void *file_read_thread_run(void *param) {
 
 		if(frpqResult.HarmonicsExist) {
 			store_to_file(frpqResult, config);
-#ifdef MQTT
-			publish_measurements(frpqResult);
-#endif
 		}
 	}
 	fclose(file);
